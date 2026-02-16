@@ -93,6 +93,32 @@ func TestGetProfileUserNotFound(t *testing.T) {
 	}
 }
 
+func TestGetProfileSuccess(t *testing.T) {
+	r, userID := setupUserRouter(t)
+
+	resp := testutil.PerformRequest(r, http.MethodGet, "/api/users/"+userID+"/profile", nil)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d body=%s", http.StatusOK, resp.Code, resp.Body.String())
+	}
+
+	var profile map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &profile); err != nil {
+		t.Fatalf("failed to decode profile: %v", err)
+	}
+	if profile["id"] != userID {
+		t.Fatalf("expected id=%s, got %v", userID, profile["id"])
+	}
+}
+
+func TestUpdateUserInvalidJSON(t *testing.T) {
+	r, userID := setupUserRouter(t)
+
+	resp := testutil.PerformRequest(r, http.MethodPut, "/api/users/"+userID, []byte("{invalid json"))
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d body=%s", http.StatusBadRequest, resp.Code, resp.Body.String())
+	}
+}
+
 func TestGetUserNotFound(t *testing.T) {
 	r, _ := setupUserRouter(t)
 
