@@ -80,6 +80,47 @@ func TestCreateNotificationValidation(t *testing.T) {
 	}
 }
 
+func TestCreateNotificationSuccess(t *testing.T) {
+	r, userID, _ := setupNotificationRouter(t)
+
+	body := testutil.MustMarshal(map[string]any{
+		"userId":  userID,
+		"title":   "Booking Update",
+		"message": "Your booking is confirmed",
+		"type":    "booking",
+	})
+
+	resp := testutil.PerformRequest(r, http.MethodPost, "/api/notifications", body)
+	if resp.Code != http.StatusCreated {
+		t.Fatalf("expected %d, got %d body=%s", http.StatusCreated, resp.Code, resp.Body.String())
+	}
+
+	var created map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &created); err != nil {
+		t.Fatalf("failed to decode notification: %v", err)
+	}
+	if created["isRead"] != false {
+		t.Fatalf("expected created notification to be unread, got %v", created["isRead"])
+	}
+}
+
+func TestGetNotificationsEmptyList(t *testing.T) {
+	r, _, _ := setupNotificationRouter(t)
+
+	resp := testutil.PerformRequest(r, http.MethodGet, "/api/notifications/non-existent-user", nil)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d body=%s", http.StatusOK, resp.Code, resp.Body.String())
+	}
+
+	var notifications []map[string]any
+	if err := json.Unmarshal(resp.Body.Bytes(), &notifications); err != nil {
+		t.Fatalf("failed to decode notifications: %v", err)
+	}
+	if len(notifications) != 0 {
+		t.Fatalf("expected 0 notifications, got %d", len(notifications))
+	}
+}
+
 func TestMarkAsReadSuccess(t *testing.T) {
 	r, userID, notificationID := setupNotificationRouter(t)
 
