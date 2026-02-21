@@ -1,175 +1,82 @@
-# Sprint 1 Detailed Report
+# Sprint-1 Report
 
-## Sprint Goal
-Establish a production-style backend foundation for Smart Campus Services, deliver core API modules, and set up a reusable testing framework so future features can be built with lower risk and faster iteration.
+## Project Members
+Venkata Sai Saran Jonnalagadda - 11114995
+Srikar Panuganti - 38909216
+Keerthi Reddy Gudibandi - 13652831
+Vishnu Sai Padyala - 32712860
 
-## Sprint Scope
-This sprint focused on backend-only work:
-- API server setup and route organization
-- database and model infrastructure
-- seed/test data initialization
-- service CRUD APIs
-- authentication APIs
-- user and notification APIs
-- test utilities and baseline unit tests
+## 1. User Stories
+## Frontend User Stories
 
-## User Stories
+### Integration Testing Setup & First Tests
+As a developer, I want integration testing configured so that I can validate feature interactions early.
+### Global Styling & Animation System
+As a user, I want consistent styling and animations so that the application feels modern and cohesive.
+### Home Page with Category Features & Styling
+As a user, I want a structured and styled home page with category-based features so that I can easily explore services.
+### Navigation & Core Components
+As a user, I want a clear navigation system and reusable UI components so that I can move through the app smoothly.
+### Authentication Pages & Flow
+As a user, I want login and registration pages with proper authentication flow so that I can securely access my account.
+### React Setup, Routing & API Service Layer
+As a developer, I want React properly configured with routing and an API service layer so that the frontend communicates cleanly with the backend.
 
-### Student-facing stories
-- As a student, I want to browse available campus services so I can quickly find the right resource.
-- As a student, I want to view service details so I can make informed decisions before booking.
-- As a student, I want to register and log in so I can access personalized data.
-- As a student, I want to manage my profile so my account information stays current.
-- As a student, I want to receive notifications so I can track booking and service updates.
+## Backend User Stories
+### API Server Setup & Global Testing Framework
+As a developer, I want a structured API server with a global testing framework so that backend services are reliable and maintainable.
+### User & Notification Handler System
+As a user, I want user management and notification handling so that I can receive relevant updates.
+### Authentication System & Handlers
+As a user, I want secure authentication and backend handlers so that my data is protected.
+### Create All Service CRUD Handlers & Routes
+As a developer, I want CRUD handlers and routes for all services so that the system supports full data operations.
+### Seed All Services & Test Data
+As a developer, I want seeded test data so that development and testing can proceed efficiently.
+### Setup Project, Models & Database Infrastructure
+As a developer, I want database models and infrastructure configured so that the application has a solid data foundation.
+## 2. Issues the Team Planned to Address
+During Sprint 1, the team planned to address the following issues (as shown in the sprint board):
 
-### Staff/Admin-facing stories
-- As a staff/admin user, I want CRUD APIs for services so I can maintain accurate service listings.
-- As a staff/admin user, I want backend structures that support approvals/workflows so operations scale reliably.
+### Frontend
+1)Integration Testing Setup & First Tests
+2)Global Styling & Animation System
+3)Home Page with Category Features & Styling
+4)Navigation & Core Components
+5)Authentication Pages & Flow
+6)React Setup, Routing & API Service Layer
 
-### Engineering stories
-- As a development team, we want clear backend layering (handlers, router, middleware, validation, models) so the system is maintainable.
-- As a development team, we want test utilities and unit-test baseline coverage so regressions are caught early.
+### Backend
+1)API Server Setup & Global Testing Framework
+2)User & Notification Handler System
+3)Authentication System & Handlers
+4)Create All Service CRUD Handlers & Routes
+5)Seed All Services & Test Data
+6)Setup Project, Models & Database Infrastructure
 
-## Issues Planned for Sprint 1
-- #4 Setup Project, Models & Database Infrastructure
-- #5 Seed All Services & Test Data
-- #6 Create All Service CRUD Handlers & Routes
-- #7 Authentication System & Handlers
-- #8 User & Notification Handler System
-- #9 API Server Setup & Global Testing Framework
+## 3. Successfully Completed Issues
+All planned Sprint-1 issues were successfully completed:
+### Frontend Completed
+✅ Integration Testing Setup & First Tests
+✅ Global Styling & Animation System
+✅ Home Page with Category Features & Styling
+✅ Navigation & Core Components
+✅ Authentication Pages & Flow
+✅ React Setup, Routing & API Service Layer
 
-## Delivery Status by Planned Issue
+### Backend Completed
+✅ API Server Setup & Global Testing Framework
+✅ User & Notification Handler System
+✅ Authentication System & Handlers
+✅ Create All Service CRUD Handlers & Routes
+✅ Seed All Services & Test Data
+✅ Setup Project, Models & Database Infrastructure
+Each issue was marked as closed in the sprint board.
 
-### #4 Setup Project, Models & Database Infrastructure
-**Status:** Completed
+## 4. Issues Not Completed and Why
+All Sprint-1 issues were completed successfully.
+There were no unfinished tasks or carryovers to the next sprint.
 
-**Delivered:**
-- Go backend module and project structure finalized.
-- Core models implemented in `backend/models/models.go`:
-  - `User`, `Service`, `Booking`, `Notification`, `Review`
-- UUID-based record IDs via model hooks.
-- Database bootstrap and migration flow in `backend/main.go`.
-- SQLite configured for local development and quick setup.
-
-**Outcome:**
-- A stable relational backend data model was established and became the base for all API modules.
-
-### #5 Seed All Services & Test Data
-**Status:** Completed
-
-**Delivered:**
-- Seed logic implemented in `backend/seed.go`.
-- Seed endpoint exposed via `POST /api/seed`.
-- Initial service/test dataset available for demos and API validation.
-
-**Outcome:**
-- Team could test feature flows quickly without manual data entry.
-
-### #6 Create All Service CRUD Handlers & Routes
-**Status:** Completed
-
-**Delivered:**
-- Service handlers in `backend/handlers/service.go`.
-- Routes wired through router setup.
-- Implemented endpoints:
-  - `GET /api/services`
-  - `GET /api/services/:id`
-  - `POST /api/services`
-  - `PUT /api/services/:id`
-  - `DELETE /api/services/:id`
-  - `GET /api/services/category/:category`
-
-**Outcome:**
-- Complete Service API lifecycle delivered and ready for frontend integration.
-
-### #7 Authentication System & Handlers
-**Status:** Completed
-
-**Delivered:**
-- Auth handlers in `backend/handlers/auth.go`:
-  - Register, Login, Logout, RefreshToken
-- Request validation with Gin binding tags.
-- Custom role validation integrated.
-- Auth response includes `role` and `serviceId` for role-aware client behavior.
-
-**Outcome:**
-- Working authentication API contract established for frontend auth flows.
-
-### #8 User & Notification Handler System
-**Status:** Completed
-
-**Delivered:**
-- User handlers in `backend/handlers/user.go`:
-  - `GetUser`, `UpdateUser`, `GetProfile`
-- Notification handlers in `backend/handlers/notification.go`:
-  - `GetNotifications`, `CreateNotification`, `MarkAsRead`
-
-**Outcome:**
-- Core account/profile and notification workflows now supported in backend.
-
-### #9 API Server Setup & Global Testing Framework
-**Status:** Completed
-
-**Delivered:**
-- Middleware extraction and setup:
-  - `backend/middleware/cors.go`
-  - `backend/middleware/request_logger.go`
-  - `backend/middleware/error_handler.go`
-  - `backend/middleware/auth.go`
-- Centralized route registration:
-  - `backend/router/routes.go`
-- Validation initialization:
-  - `backend/validation/validator.go`
-- Test utilities:
-  - `backend/testutil/test_db.go`
-  - `backend/testutil/http.go`
-- Handler unit tests added/expanded:
-  - `backend/handlers/auth_test.go`
-  - `backend/handlers/service_test.go`
-  - `backend/handlers/booking_test.go`
-  - `backend/handlers/user_test.go`
-  - `backend/handlers/notification_test.go`
-
-**Outcome:**
-- Backend gained a maintainable global structure and repeatable test foundation.
-
-## Successfully Completed (Summary)
-All planned Sprint 1 backend issues were completed:
-- #4 Completed
-- #5 Completed
-- #6 Completed
-- #7 Completed
-- #8 Completed
-- #9 Completed
-
-## Not Completed and Why
-No planned Sprint 1 issue remained incomplete.
-
-That said, some items were intentionally left as future hardening tasks (outside Sprint 1 scope):
-- Production-grade JWT/token lifecycle hardening
-- Password hashing enforcement across all auth paths
-- Expanded authorization guards on every protected route
-- Broader integration/end-to-end test suite
-
-These were not delivery failures; they were deferred by scope prioritization to keep Sprint 1 focused on backend foundation and core API readiness.
-
-## Testing and Validation Evidence
-- APIs were exercised via Postman and CLI (`curl`) for endpoint-level verification.
-- Unit tests validate both success and failure paths (validation errors, conflict, unauthorized, not found).
-- In-memory DB test setup ensures deterministic test execution without polluting local runtime data.
-
-## Sprint Retrospective (Backend)
-### What went well
-- Clear modular backend organization improved implementation speed.
-- Test utility abstraction reduced duplicate setup code.
-- Seeded data accelerated debugging and demos.
-
-### What can be improved
-- Add stricter API response standardization for all handlers.
-- Increase negative-path test coverage for every endpoint.
-- Add CI automation to run test suite on every PR.
-
-### Next sprint recommendations
-- Complete security hardening (JWT + bcrypt + tighter route protection).
-- Add pagination/filtering enhancements where needed.
-- Add integration tests spanning auth -> user -> booking -> notification flow.
+## 5. Demo Video Links
+Front End Demo Video - https://youtu.be/S_szQ-sUyEg
+Back End Demo Video - https://drive.google.com/file/d/1F7GmL4yGbEQgQ99luPyUNA6Eyq8AgUmg/view?usp=sharing
