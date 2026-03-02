@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -17,25 +19,105 @@ func NewServiceHandler(db *gorm.DB) *ServiceHandler {
 }
 
 type CreateServiceRequest struct {
-	Name        string  `json:"name" binding:"required"`
-	Description string  `json:"description" binding:"required"`
-	Category    string  `json:"category" binding:"required"`
-	ImageURL    string  `json:"imageUrl"`
-	Location    string  `json:"location" binding:"required"`
-	Phone       string  `json:"phone"`
-	Email       string  `json:"email"`
-	Hours       string  `json:"hours"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	Category    string `json:"category" binding:"required"`
+	ImageURL    string `json:"imageUrl"`
+	Location    string `json:"location" binding:"required"`
+	Phone       string `json:"phone"`
+	Email       string `json:"email"`
+	Hours       string `json:"hours"`
 }
 
-// ListServices returns all services
+const (
+	defaultPageSize = 100
+	maxPageSize     = 200
+)
+
+var allowedSortColumns = map[string]string{
+	"name":      "name",
+	"category":  "category",
+	"rating":    "rating",
+	"createdAt": "created_at",
+	"updatedAt": "updated_at",
+}
+
+// ListServices returns services with optional filtering, search, and pagination.
+//
+// Query params:
+// - q: case-insensitive partial search on name and description
+// - category: exact category match (case-insensitive)
+// - activeOnly: true/false, defaults to false
+// - limit: max rows to return (1-200), defaults to 100
+// - offset: rows to skip, defaults to 0
+// - sortBy: one of name, category, rating, createdAt, updatedAt
+// - sortOrder: asc/desc, defaults to asc
 func (h *ServiceHandler) ListServices(c *gin.Context) {
+	query := h.db.Model(&models.Service{})
+
+	searchQuery := strings.TrimSpace(c.Query("q"))
+	if searchQuery != "" {
+		searchPattern := "%" + strings.ToLower(searchQuery) + "%"
+		query = query.Where(
+			"LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+			searchPattern,
+			searchPattern,
+		)
+	}
+
+	categoryFilter := strings.TrimSpace(c.Query("category"))
+	if categoryFilter != "" {
+		query = query.Where("LOWER(category) = ?", strings.ToLower(categoryFilter))
+	}
+
+	activeOnly := strings.EqualFold(c.Query("activeOnly"), "true")
+	if activeOnly {
+		query = query.Where("is_active = ?", true)
+	}
+
+	limit := parseBoundedInt(c.Query("limit"), defaultPageSize, 1, maxPageSize)
+	offset := parseBoundedInt(c.Query("offset"), 0, 0, 1000000)
+
+	sortColumn := resolveSortColumn(c.Query("sortBy"))
+	sortDirection := resolveSortDirection(c.Query("sortOrder"))
+	query = query.Order(sortColumn + " " + sortDirection)
+	query = query.Limit(limit).Offset(offset)
+
 	var services []models.Service
-	if err := h.db.Find(&services).Error; err != nil {
+	if err := query.Find(&services).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch services"})
 		return
 	}
 
 	c.JSON(http.StatusOK, services)
+}
+
+func parseBoundedInt(rawValue string, defaultValue, minValue, maxValue int) int {
+	parsedValue, err := strconv.Atoi(rawValue)
+	if err != nil {
+		return defaultValue
+	}
+	if parsedValue < minValue {
+		return minValue
+	}
+	if parsedValue > maxValue {
+		return maxValue
+	}
+	return parsedValue
+}
+
+func resolveSortColumn(rawColumn string) string {
+	if column, ok := allowedSortColumns[strings.TrimSpace(rawColumn)]; ok {
+		return column
+	}
+	return "name"
+}
+
+func resolveSortDirection(rawDirection string) string {
+	if strings.EqualFold(strings.TrimSpace(rawDirection), "desc") {
+		return "DESC"
+	}
+	return "ASC"
 }
 
 // GetService returns a service by ID
