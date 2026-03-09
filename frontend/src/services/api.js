@@ -44,7 +44,6 @@ export const serviceAPI = {
 };
 
 export const bookingAPI = {
-  getServices: () => apiClient.get('/services'),
   createBooking: (bookingData) => apiClient.post('/bookings', bookingData),
   getBooking: (id) => apiClient.get(`/bookings/${id}`),
   getUserBookings: (userId) => apiClient.get(`/bookings/user/${userId}`),
