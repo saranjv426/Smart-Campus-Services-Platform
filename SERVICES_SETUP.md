@@ -154,15 +154,4 @@ Body: {
 }
 ```
 
-## Next Steps
 
-To add more service categories:
-
-1. **Update the seed.go file** with additional services (e.g., Dining, Transportation, Health Services, etc.)
-2. **Call the seed endpoint** to add them to the database:
-   ```bash
-   curl -X POST http://localhost:8080/api/seed
-   ```
-3. **New services appear immediately** in the Services page
-
-The system is fully scalable and ready to accommodate multiple service categories with booking and review functionality!
