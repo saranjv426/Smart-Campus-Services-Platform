@@ -38,7 +38,7 @@ function Profile() {
       [name]: value,
     }));
   };
-  // Issue #20: Handles updating user profile information through API
+  // Handles updating user profile information through API : Issue #20
   const handleSaveProfile = async () => {
     try {
       await userAPI.updateUser(id, formData);
