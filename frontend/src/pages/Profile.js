@@ -1,5 +1,5 @@
 
-// Issue #19: User Profile Page with Booking History
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { userAPI } from '../services/api';
@@ -38,7 +38,7 @@ function Profile() {
       [name]: value,
     }));
   };
-
+  // Issue #20: Handles updating user profile information through API
   const handleSaveProfile = async () => {
     try {
       await userAPI.updateUser(id, formData);

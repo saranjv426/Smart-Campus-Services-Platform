@@ -109,6 +109,7 @@
   background-color: #e55a00;
 }
 
+/* Issue #20: Styles for profile edit form, save button, and cancel button */
 .save-btn {
   background-color: #4caf50;
 }
