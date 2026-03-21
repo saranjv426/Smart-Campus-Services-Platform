@@ -486,11 +486,417 @@ func seedDatabase(db *gorm.DB) error {
 		},
 	}
 
+	// Maintenance Services
+	maintenanceServices := []models.Service{
+		{
+			Name:        "Facilities Repair & Management - General Repairs",
+			Description: "Comprehensive facility repairs and maintenance for campus buildings. Services: Drywall patches, door repairs, hardware replacement, interior painting, carpet cleaning, space reconfiguration. Emergency response available 24/7 for critical issues. Average turnaround: 24-48 hours for routine requests.",
+			Category:    "maintenance",
+			Location:    "Buildings & Grounds Division, Central Campus",
+			Phone:       "(352) 392-1691",
+			Email:       "facilities@ufl.edu",
+			Hours:       "Mon-Fri: 7:00 AM - 4:00 PM (24/7 Emergency Hotline)",
+			ImageURL:    "https://images.pexels.com/photos/1534221/pexels-photo-1534221.jpeg?w=500&h=300",
+			Rating:      4.2,
+			IsActive:    true,
+		},
+		{
+			Name:        "HVAC Services - Heating & Cooling",
+			Description: "Comprehensive heating, ventilation, and air conditioning services for all campus facilities. Services: AC repair and maintenance, heating system checks, thermostat calibration, air quality inspections, emergency cooling/heating requests. Preventive maintenance plans available. Response time: Same day for urgent issues.",
+			Category:    "maintenance",
+			Location:    "Mechanical Services Building, Central Campus",
+			Phone:       "(352) 392-1700",
+			Email:       "hvac@ufl.edu",
+			Hours:       "Mon-Fri: 7:00 AM - 4:00 PM (On-call 24/7 for emergencies)",
+			ImageURL:    "https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?w=500&h=300",
+			Rating:      4.4,
+			IsActive:    true,
+		},
+		{
+			Name:        "Plumbing Services",
+			Description: "Expert plumbing repairs and maintenance throughout campus. Services: Pipe repairs and replacement, drain cleaning, fixture repairs, water leak detection, bathroom renovations, emergency water shutoff. Preventive inspection programs available. Average response: Same day for emergencies.",
+			Category:    "maintenance",
+			Location:    "Plumbing Services Center, West Campus",
+			Phone:       "(352) 392-1710",
+			Email:       "plumbing@ufl.edu",
+			Hours:       "Mon-Fri: 7:30 AM - 4:30 PM (Emergency available 24/7)",
+			ImageURL:    "https://images.pexels.com/photos/5632403/pexels-photo-5632403.jpeg?w=500&h=300",
+			Rating:      4.3,
+			IsActive:    true,
+		},
+		{
+			Name:        "Electrical Services",
+			Description: "Comprehensive electrical repair and maintenance for campus infrastructure. Services: Circuit repairs, outlet installations, lighting repairs, emergency power restoration, electrical code compliance, equipment troubleshooting. Licensed electricians available. Emergency response: Available 24/7.",
+			Category:    "maintenance",
+			Location:    "Electrical Distribution Center, East Campus",
+			Phone:       "(352) 392-1720",
+			Email:       "electrical@ufl.edu",
+			Hours:       "Mon-Fri: 7:00 AM - 4:00 PM (24/7 Emergency Line)",
+			ImageURL:    "https://images.pexels.com/photos/5632627/pexels-photo-5632627.jpeg?w=500&h=300",
+			Rating:      4.5,
+			IsActive:    true,
+		},
+		{
+			Name:        "Custodial & Janitorial Services",
+			Description: "Professional cleaning and janitorial services for academic buildings, offices, and common areas. Services: Daily cleaning, floor waxing, carpet cleaning, window washing, specialized sanitation, event setup/cleanup. Standards: EPA certified green cleaning products. Scheduled cleaning: 6 days/week.",
+			Category:    "maintenance",
+			Location:    "Custodial Services, Central Campus",
+			Phone:       "(352) 392-1730",
+			Email:       "custodial@ufl.edu",
+			Hours:       "Mon-Fri: 6:00 AM - 4:00 PM (On-call for special requests)",
+			ImageURL:    "https://images.pexels.com/photos/3945696/pexels-photo-3945696.jpeg?w=500&h=300",
+			Rating:      4.2,
+			IsActive:    true,
+		},
+		{
+			Name:        "Grounds Maintenance & Landscaping",
+			Description: "Comprehensive landscape maintenance and grounds management services. Services: Lawn care, tree trimming, mulching, landscaping design, irrigation system maintenance, pest management. Seasonal adjustments: Spring/summer intensive care. Green building certified operations.",
+			Category:    "maintenance",
+			Location:    "Grounds & Landscape Services, Campus-wide",
+			Phone:       "(352) 392-1740",
+			Email:       "grounds@ufl.edu",
+			Hours:       "Mon-Fri: 7:00 AM - 5:00 PM, Sat: 7:00 AM - 1:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3994408/pexels-photo-3994408.jpeg?w=500&h=300",
+			Rating:      4.4,
+			IsActive:    true,
+		},
+		{
+			Name:        "Pest Control & Prevention",
+			Description: "Integrated pest management services protecting campus buildings and grounds. Services: Insect and rodent control, preventive treatments, inspection surveys, emergency response. Methods: Eco-friendly solutions prioritized. EPA certified technicians. Initial consultation: Free assessment.",
+			Category:    "maintenance",
+			Location:    "Environmental Services Division",
+			Phone:       "(352) 392-1750",
+			Email:       "pestcontrol@ufl.edu",
+			Hours:       "Mon-Fri: 8:00 AM - 4:30 PM (Emergency available)",
+			ImageURL:    "https://images.pexels.com/photos/5707881/pexels-photo-5707881.jpeg?w=500&h=300",
+			Rating:      4.1,
+			IsActive:    true,
+		},
+		{
+			Name:        "Safety & Security Maintenance",
+			Description: "Maintenance and repairs for campus safety systems and infrastructure. Services: Lock repairs, access control maintenance, alarm system testing, emergency lighting, fire safety equipment. 24-hour emergency support. Critical system SLA: 1-hour response.",
+			Category:    "maintenance",
+			Location:    "Public Safety Building, Central Campus",
+			Phone:       "(352) 392-1911",
+			Email:       "safetymaint@ufl.edu",
+			Hours:       "Mon-Fri: 8:00 AM - 5:00 PM (24/7 Emergency)",
+			ImageURL:    "https://images.pexels.com/photos/3318904/pexels-photo-3318904.jpeg?w=500&h=300",
+			Rating:      4.5,
+			IsActive:    true,
+		},
+	}
+
+	// Academic Support Services
+	academicServices := []models.Service{
+		{
+			Name:        "UF Tutor.com - Peer Tutoring",
+			Description: "Free peer tutoring services available to all UF students. Subjects: Math, Science, English, Foreign Languages, Business, Engineering, and more. Format: One-on-one sessions, group study, drop-in help. Sessions: 30-60 minutes. Scheduling: Online booking system for 24+ hour advance reservations.",
+			Category:    "academic",
+			Location:    "Learning Support Center, Norman Hall, Room 200",
+			Phone:       "(352) 392-2020",
+			Email:       "tutoring@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 8:00 PM, Sat: 10:00 AM - 4:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3825517/pexels-photo-3825517.jpeg?w=500&h=300",
+			Rating:      4.8,
+			IsActive:    true,
+		},
+		{
+			Name:        "Writing Center - Composition Support",
+			Description: "Professional writing support for all academic levels and disciplines. Services: Essay organization, thesis development, citation formatting (APA, MLA, Chicago), grammar review, research strategies. Format: One-on-one consultations. Duration: 50-minute sessions. Specialties: STEM writing, creative writing, professional documents.",
+			Category:    "academic",
+			Location:    "Smathers Library, Room 338",
+			Phone:       "(352) 392-1675",
+			Email:       "writingcenter@ufl.edu",
+			Hours:       "Mon-Thu: 10:00 AM - 8:00 PM, Fri: 10:00 AM - 4:00 PM, Sun: 1:00 PM - 5:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3938022/pexels-photo-3938022.jpeg?w=500&h=300",
+			Rating:      4.9,
+			IsActive:    true,
+		},
+		{
+			Name:        "Math Lab - Quantitative Support",
+			Description: "Specialized mathematics tutoring and study support. Courses: Pre-Calculus, Calculus, Linear Algebra, Statistics, Differential Equations, Matrix Theory. Resources: Interactive whiteboards, practice problem sets, graphing calculators. Group/individual sessions available. Appointments: Online or walk-in (first-come, first-served).",
+			Category:    "academic",
+			Location:    "Williamson Hall, Room 215",
+			Phone:       "(352) 392-2019",
+			Email:       "mathlab@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 6:00 PM, Sun: 2:00 PM - 6:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "Study Groups & Peer Learning",
+			Description: "Organized study groups for major courses and upcoming exams. Format: Small group sessions (3-8 students) led by experienced student facilitators. Courses: High-enrollment classes, challenging prerequisites, graduate seminars. Duration: 60-90 minutes. Free for all students. Registration: Easy online signup.",
+			Category:    "academic",
+			Location:    "Multiple Locations - Coordinated from Reitz Union",
+			Phone:       "(352) 392-2021",
+			Email:       "studygroups@ufl.edu",
+			Hours:       "Flexible - Groups meet at various times evening/weekend",
+			ImageURL:    "https://images.pexels.com/photos/3769714/pexels-photo-3769714.jpeg?w=500&h=300",
+			Rating:      4.6,
+			IsActive:    true,
+		},
+		{
+			Name:        "Science Tutoring Center",
+			Description: "Specialized tutoring for science disciplines. Subjects: Biology, Chemistry, Physics, Geology, Environmental Science. Format: One-on-one and small group sessions. Special Features: Lab report review, exam preparation, problem-solving strategies. Staff: Ph.D. candidates and advanced undergrads. Compatibility: Integrates with course curricula.",
+			Category:    "academic",
+			Location:    "Williamson Hall, Science Campus",
+			Phone:       "(352) 392-2022",
+			Email:       "sciencetutoring@ufl.edu",
+			Hours:       "Mon-Fri: 10:00 AM - 7:00 PM, Sat: 12:00 PM - 5:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3826519/pexels-photo-3826519.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "Engineering Success Program",
+			Description: "Comprehensive academic support specifically for engineering students. Services: Circuit analysis tutoring, CAD training, coding help (MATLAB, C++, Python), design project consultation, exam prep. Resources: Computer access, simulation software. Format: Group and individual sessions.",
+			Category:    "academic",
+			Location:    "Weil Hall, Engineering Campus",
+			Phone:       "(352) 392-2023",
+			Email:       "engsuccessprogram@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 8:00 PM, Sat: 10:00 AM - 3:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?w=500&h=300",
+			Rating:      4.8,
+			IsActive:    true,
+		},
+		{
+			Name:        "Reading & Comprehension Lab",
+			Description: "Support for reading efficiency and comprehension skills. Services: Speed reading techniques, critical thinking strategies, textbook reading methods, academic vocabulary building. Assessment: Reading level evaluation and personalized learning plans. Format: Individual and group sessions.",
+			Category:    "academic",
+			Location:    "Smathers Library, Room 250",
+			Phone:       "(352) 392-2024",
+			Email:       "readinglab@ufl.edu",
+			Hours:       "Mon-Fri: 10:00 AM - 6:00 PM, Sun: 2:00 PM - 6:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3770517/pexels-photo-3770517.jpeg?w=500&h=300",
+			Rating:      4.5,
+			IsActive:    true,
+		},
+		{
+			Name:        "Test Prep & Exam Coaching",
+			Description: "Specialized coaching for standardized tests and course exams. Tests: GRE, GMAT, SAT, ACT, MCAT, LSAT. Services: Practice sessions, strategy coaching, time management, stress reduction techniques. Resources: Official test materials, diagnostic practice tests. Success Rate: 85% improvement in scores.",
+			Category:    "academic",
+			Location:    "Educational Resource Center, Norman Hall",
+			Phone:       "(352) 392-2025",
+			Email:       "testprep@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 7:00 PM, Sat: 10:00 AM - 3:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3568520/pexels-photo-3568520.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+	}
+
+	// Recreation & Wellness Services
+	recreationServices := []models.Service{
+		{
+			Name:        "Southwest Recreational Complex - Gym Facilities",
+			Description: "State-of-the-art fitness complex with 140,000 sq ft of recreational space. Equipment: Free weights, cardio machines, strength training, swimming pools. Classes: Yoga, Zumba, CrossFit, spin classes. Amenities: Locker rooms, sauna, steam room. Membership: Free for enrolled UF students, nominal fee for faculty/staff.",
+			Category:    "recreation",
+			Location:    "1751 Museum Road, Gainesville",
+			Phone:       "(352) 392-1691",
+			Email:       "recsports@ufl.edu",
+			Hours:       "Mon-Fri: 6:00 AM - 10:00 PM, Sat-Sun: 8:00 AM - 7:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "UF Gators Athletics - Sports Programs",
+			Description: "Premier NCAA Division I athletics program with 19 varsity sports. Men's Sports: Football, basketball, baseball, soccer, golf, cross country. Women's Sports: Rowing, soccer, volleyball, softball, track & field, tennis, golf, lacrosse. Intramural participation: Open to all UF students. Facilities: Stadium, arena, fields.",
+			Category:    "recreation",
+			Location:    "Ben Hill Griffin Stadium & O'Connell Center, Thompson\u0015 Boling Complex",
+			Phone:       "(352) 392-3561",
+			Email:       "athletics@ufl.edu",
+			Hours:       "Event-based schedule (See website for game times)",
+			ImageURL:    "https://images.pexels.com/photos/159622/pexels-photo-159622.jpeg?w=500&h=300",
+			Rating:      4.8,
+			IsActive:    true,
+		},
+		{
+			Name:        "Intramural Sports & Club Sports",
+			Description: "Recreational sports programs for all skill levels. Sports: Flag football, basketball, volleyball, tennis, ultimate frisbee, bowling, cricket, ice hockey simulation. Format: Men's, women's, and co-rec divisions. Season: Year-round with rolling registrations. Fees: Minimal per-team charges.",
+			Category:    "recreation",
+			Location:    "Intramural Fields & Courts, Campus-wide",
+			Phone:       "(352) 392-1698",
+			Email:       "intramurals@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 5:00 PM (Games: Evenings & weekends)",
+			ImageURL:    "https://images.pexels.com/photos/274690/pexels-photo-274690.jpeg?w=500&h=300",
+			Rating:      4.6,
+			IsActive:    true,
+		},
+		{
+			Name:        "Outdoor Recreation Adventures",
+			Description: "Adventure and outdoor activity programs. Activities: Hiking excursions, kayaking trips, rock climbing, camping weekends, canoeing, geocaching. Destinations: Florida springs, coastal areas, state parks. Equipment: Provided or rental available. Group sizes: Small groups (8-15 people). Skill levels: Beginner-friendly with advanced options.",
+			Category:    "recreation",
+			Location:    "Outdoor Adventures Center, West Campus",
+			Phone:       "(352) 392-1699",
+			Email:       "outdooradventures@ufl.edu",
+			Hours:       "Office: Mon-Fri 10:00 AM - 4:00 PM (Trips: Weekends/breaks)",
+			ImageURL:    "https://images.pexels.com/photos/3621457/pexels-photo-3621457.jpeg?w=500&h=300",
+			Rating:      4.8,
+			IsActive:    true,
+		},
+		{
+			Name:        "Club Sports - Student-Organized",
+			Description: "Student-led competitive and recreational club sports. Clubs: Cricket, lacrosse, rugby, water polo, volleyball, badminton, archery, martial arts, tennis. Recognition: 40+ active clubs. Membership: Open to all enrolled students. Support: Facilities, coaching referrals, tournament hosting.",
+			Category:    "recreation",
+			Location:    "Various Campus Facilities",
+			Phone:       "(352) 392-1700",
+			Email:       "clubsports@ufl.edu",
+			Hours:       "Variable by club (Admin: Mon-Fri 9 AM - 4 PM)",
+			ImageURL:    "https://images.pexels.com/photos/3621443/pexels-photo-3621443.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "Rock Climbing Wall & Bouldering",
+			Description: "Indoor climbing facility with multiple difficulty levels. Features: 40-foot climbing wall, competition bouldering wall, training wall for beginners. Equipment: Harnesses, ropes, padding provided. Instruction: Belay certification classes, technique coaching. Open climbing sessions: Beginners welcome, experienced climbers practice.",
+			Category:    "recreation",
+			Location:    "Southwest Rec Complex - Climbing Area",
+			Phone:       "(352) 392-1691",
+			Email:       "climbing@ufl.edu",
+			Hours:       "Daily: 12:00 PM - 9:00 PM (Weekends: 10:00 AM - 6:00 PM)",
+			ImageURL:    "https://images.pexels.com/photos/167022/pexels-photo-167022.jpeg?w=500&h=300",
+			Rating:      4.8,
+			IsActive:    true,
+		},
+		{
+			Name:        "Water Sports Center - Aquatics",
+			Description: "Comprehensive aquatic programs and water sports. Programs: Swim lessons (all levels), competitive swim training, water volleyball, synchronized swimming, diving training. Pools: Olympic-size pools, shallow teaching pools. Instructors: Certified lifeguards and swim coaches. Open water times for recreational swim.",
+			Category:    "recreation",
+			Location:    "Beaty Pools Complex, Campus Center",
+			Phone:       "(352) 392-1710",
+			Email:       "aquatics@ufl.edu",
+			Hours:       "Mon-Fri: 6:00 AM - 9:00 PM, Sat-Sun: 8:00 AM - 6:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/416558/pexels-photo-416558.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "Wellness & Health Education Programs",
+			Description: "Holistic health and wellness programs promoting student wellbeing. Services: Stress management workshops, nutrition counseling, sleep hygiene seminars, substance abuse prevention, sexual health education. Format: Individual consultations, group workshops, online resources. Free for all UF students.",
+			Category:    "recreation",
+			Location:    "Wellness Center, Shands Medical Campus",
+			Phone:       "(352) 392-1575",
+			Email:       "wellness@ufl.edu",
+			Hours:       "Mon-Fri: 8:00 AM - 5:00 PM (Workshop schedule varies)",
+			ImageURL:    "https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?w=500&h=300",
+			Rating:      4.6,
+			IsActive:    true,
+		},
+	}
+
+	// Events & Activities Services
+	eventsServices := []models.Service{
+		{
+			Name:        "Events & Activities - Campus Events",
+			Description: "Comprehensive campus event planning and execution. Events: Concerts, comedy shows, movies, festivals, networking events, career fairs. Planning Services: Venue selection, vendor coordination, promotion, setup/cleanup. Attendance: 500-5000+ depending on event. Calendar: Year-round programming.",
+			Category:    "events",
+			Location:    "Reitz Union Event Planning Center",
+			Phone:       "(352) 392-1691",
+			Email:       "events@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 5:00 PM (Events: Evenings/weekends)",
+			ImageURL:    "https://images.pexels.com/photos/1901042/pexels-photo-1901042.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "Professional Development Workshops",
+			Description: "Career-focused workshops and professional development seminars. Topics: Resume writing, interview skills, networking, LinkedIn optimization, internship search, career transition. Frequency: 2-3 sessions weekly. Format: Interactive workshops with Q&A. Instructors: Career counselors and industry professionals.",
+			Category:    "events",
+			Location:    "Reitz Union, Room 314",
+			Phone:       "(352) 392-1450",
+			Email:       "careerworkshops@ufl.edu",
+			Hours:       "Mon-Fri: 10:00 AM - 4:00 PM (Workshops: Peak hours 12-5 PM)",
+			ImageURL:    "https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?w=500&h=300",
+			Rating:      4.6,
+			IsActive:    true,
+		},
+		{
+			Name:        "Academic Seminars & Guest Lectures",
+			Description: "Scholarly seminars and distinguished guest lectures. Format: Faculty-led seminars, visiting scholar lectures, research presentations. Topics: Current issues, cutting-edge research, interdisciplinary perspectives. Frequency: Weekly programming. Audience: Open to all students and campus community.",
+			Category:    "events",
+			Location:    "Various Auditoriums - Norman Hall Primary",
+			Phone:       "(352) 392-7670",
+			Email:       "academics@ufl.edu",
+			Hours:       "Variable - Most afternoon/evening (Check schedule)",
+			ImageURL:    "https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?w=500&h=300",
+			Rating:      4.5,
+			IsActive:    true,
+		},
+		{
+			Name:        "Cultural & Diversity Events",
+			Description: "Celebrations and educational events highlighting diverse cultures and traditions. Events: International celebrations, cultural festivals, ethnic food nights, heritage month programming. Purpose: Build community, promote inclusion, celebrate diversity. Organization: International student centers, cultural student organizations.",
+			Category:    "events",
+			Location:    "Reitz Union & Campus-wide Venues",
+			Phone:       "(352) 392-7950",
+			Email:       "culturalaffairs@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 5:00 PM (Events: Evenings/weekends)",
+			ImageURL:    "https://images.pexels.com/photos/3629714/pexels-photo-3629714.jpeg?w=500&h=300",
+			Rating:      4.8,
+			IsActive:    true,
+		},
+		{
+			Name:        "Student Club Fair & Organizations",
+			Description: "Community of 1000+ student clubs and organizations. Categories: Academic, cultural, service, recreation, Greek life, hobby/interest. Annual Fair: Fall & Spring recruitment events. Benefits: Leadership opportunities, social connections, skill development. Office: Student Life supports club establishment and operations.",
+			Category:    "events",
+			Location:    "Reitz Union - Student Organizations Office",
+			Phone:       "(352) 392-1691",
+			Email:       "studentorg@ufl.edu",
+			Hours:       "Mon-Fri: 9:00 AM - 5:00 PM",
+			ImageURL:    "https://images.pexels.com/photos/3629744/pexels-photo-3629744.jpeg?w=500&h=300",
+			Rating:      4.7,
+			IsActive:    true,
+		},
+		{
+			Name:        "Social & Networking Events",
+			Description: "Casual social gatherings and networking opportunities. Events: Happy hours, game nights, open mics, speed networking, mixers. Venues: Reitz Union, dining halls, outdoor spaces. Frequency: 2-3 per week. Accessibility: Free or minimal cost, open to all students.",
+			Category:    "events",
+			Location:    "Reitz Union & On-Campus Locations",
+			Phone:       "(352) 392-1691",
+			Email:       "socialevents@ufl.edu",
+			Hours:       "Event-based scheduling (Most evenings/weekends)",
+			ImageURL:    "https://images.pexels.com/photos/3625517/pexels-photo-3625517.jpeg?w=500&h=300",
+			Rating:      4.6,
+			IsActive:    true,
+		},
+		{
+			Name:        "Homecoming & Traditions Events",
+			Description: "Signature annual events celebrating university traditions and spirit. Events: Homecoming parade, football game, pep rallies, traditions ceremonies, graduation celebrations. Scale: Thousands of campus community members. Coordination: Student affairs, alumni association, traditions board.",
+			Category:    "events",
+			Location:    "Campus-wide (Primary: O'Connell Center, Stadium)",
+			Phone:       "(352) 392-1691",
+			Email:       "traditions@ufl.edu",
+			Hours:       "For specific event timing (Peak: September-November)",
+			ImageURL:    "https://images.pexels.com/photos/3629714/pexels-photo-3629714.jpeg?w=500&h=300",
+			Rating:      4.9,
+			IsActive:    true,
+		},
+		{
+			Name:        "Wellness & Recreation Expos",
+			Description: "Seasonal expos showcasing wellness services, fitness programs, and recreational opportunities. Features: Vendor booths, fitness demonstrations, health screenings, activity samples. Timing: Fall Welcome Expo, Spring Health Expo, Fall Rec Expo. Attendance: 500+ students per event.",
+			Category:    "events",
+			Location:    "Plaza of the Americas & Stadium Lawn",
+			Phone:       "(352) 392-1691",
+			Email:       "expos@ufl.edu",
+			Hours:       "Seasonal - Check calendar (Usually 11 AM - 3 PM)",
+			ImageURL:    "https://images.pexels.com/photos/3629744/pexels-photo-3629744.jpeg?w=500&h=300",
+			Rating:      4.5,
+			IsActive:    true,
+		},
+	}
+
 	// Create services first and store IDs
 	var libraryServiceID string
 	var diningServiceID string
 	var transportationServiceID string
 	var healthServiceID string
+	var maintenanceServiceID string
+	var academicServiceID string
+	var recreationServiceID string
+	var eventsServiceID string
+
+	fmt.Println("📚 Adding Library Services...")
 	for _, service := range libraryServices {
 		if err := db.Create(&service).Error; err != nil {
 			log.Printf("Failed to create service %s: %v", service.Name, err)
@@ -502,6 +908,7 @@ func seedDatabase(db *gorm.DB) error {
 		}
 	}
 
+	fmt.Println("\n🍽️  Adding Dining Services...")
 	for _, service := range diningServices {
 		if err := db.Create(&service).Error; err != nil {
 			log.Printf("Failed to create service %s: %v", service.Name, err)
@@ -537,8 +944,57 @@ func seedDatabase(db *gorm.DB) error {
 		}
 	}
 
+	fmt.Println("\n🔧 Adding Maintenance Services...")
+	for _, service := range maintenanceServices {
+		if err := db.Create(&service).Error; err != nil {
+			log.Printf("Failed to create service %s: %v", service.Name, err)
+		} else {
+			fmt.Printf("✓ Created service: %s\n", service.Name)
+			if service.Name == "Facilities Repair & Management - General Repairs" {
+				maintenanceServiceID = service.ID
+			}
+		}
+	}
+
+	fmt.Println("\n🎓 Adding Academic Support Services...")
+	for _, service := range academicServices {
+		if err := db.Create(&service).Error; err != nil {
+			log.Printf("Failed to create service %s: %v", service.Name, err)
+		} else {
+			fmt.Printf("✓ Created service: %s\n", service.Name)
+			if service.Name == "UF Tutor.com - Peer Tutoring" {
+				academicServiceID = service.ID
+			}
+		}
+	}
+
+	fmt.Println("\n🏃 Adding Recreation & Wellness Services...")
+	for _, service := range recreationServices {
+		if err := db.Create(&service).Error; err != nil {
+			log.Printf("Failed to create service %s: %v", service.Name, err)
+		} else {
+			fmt.Printf("✓ Created service: %s\n", service.Name)
+			if service.Name == "Southwest Recreational Complex - Gym Facilities" {
+				recreationServiceID = service.ID
+			}
+		}
+	}
+
+	fmt.Println("\n🎉 Adding Events & Activities Services...")
+	for _, service := range eventsServices {
+		if err := db.Create(&service).Error; err != nil {
+			log.Printf("Failed to create service %s: %v", service.Name, err)
+		} else {
+			fmt.Printf("✓ Created service: %s\n", service.Name)
+			if service.Name == "Events & Activities - Campus Events" {
+				eventsServiceID = service.ID
+			}
+		}
+	}
+
 	// Create staff accounts for each service
 	staffAccounts := []models.User{
+		// Library Staff
 		{
 			Email:     "library-admin@ufl.edu",
 			Password:  "library123",
@@ -557,6 +1013,7 @@ func seedDatabase(db *gorm.DB) error {
 			Role:      "staff",
 			ServiceID: libraryServiceID,
 		},
+		// Dining Staff
 		{
 			Email:     "dining-admin@ufl.edu",
 			Password:  "dining123",
@@ -575,6 +1032,7 @@ func seedDatabase(db *gorm.DB) error {
 			Role:      "staff",
 			ServiceID: diningServiceID,
 		},
+		// Transportation Staff
 		{
 			Email:     "transit-admin@ufl.edu",
 			Password:  "transit123",
@@ -593,6 +1051,7 @@ func seedDatabase(db *gorm.DB) error {
 			Role:      "staff",
 			ServiceID: transportationServiceID,
 		},
+		// Health Staff
 		{
 			Email:     "health-admin@ufl.edu",
 			Password:  "health123",
@@ -610,6 +1069,82 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:     "(352) 392-1162",
 			Role:      "staff",
 			ServiceID: healthServiceID,
+		},
+		// Maintenance Staff
+		{
+			Email:     "maintenance-admin@ufl.edu",
+			Password:  "maintenance123",
+			FirstName: "Maintenance",
+			LastName:  "Director",
+			Phone:     "(352) 392-1691",
+			Role:      "staff",
+			ServiceID: maintenanceServiceID,
+		},
+		{
+			Email:     "maintenance-tech@ufl.edu",
+			Password:  "maintenance123",
+			FirstName: "Robert",
+			LastName:  "Chen",
+			Phone:     "(352) 392-1692",
+			Role:      "staff",
+			ServiceID: maintenanceServiceID,
+		},
+		// Academic Support Staff
+		{
+			Email:     "academic-admin@ufl.edu",
+			Password:  "academic123",
+			FirstName: "Academic",
+			LastName:  "Coordinator",
+			Phone:     "(352) 392-2020",
+			Role:      "staff",
+			ServiceID: academicServiceID,
+		},
+		{
+			Email:     "tutor-staff@ufl.edu",
+			Password:  "academic123",
+			FirstName: "Jessica",
+			LastName:  "Williams",
+			Phone:     "(352) 392-2021",
+			Role:      "staff",
+			ServiceID: academicServiceID,
+		},
+		// Recreation Staff
+		{
+			Email:     "recreation-admin@ufl.edu",
+			Password:  "recreation123",
+			FirstName: "Recreation",
+			LastName:  "Manager",
+			Phone:     "(352) 392-1691",
+			Role:      "staff",
+			ServiceID: recreationServiceID,
+		},
+		{
+			Email:     "fitness-staff@ufl.edu",
+			Password:  "recreation123",
+			FirstName: "David",
+			LastName:  "Thompson",
+			Phone:     "(352) 392-1698",
+			Role:      "staff",
+			ServiceID: recreationServiceID,
+		},
+		// Events Staff
+		{
+			Email:     "events-admin@ufl.edu",
+			Password:  "events123",
+			FirstName: "Events",
+			LastName:  "Coordinator",
+			Phone:     "(352) 392-1691",
+			Role:      "staff",
+			ServiceID: eventsServiceID,
+		},
+		{
+			Email:     "events-staff@ufl.edu",
+			Password:  "events123",
+			FirstName: "Amanda",
+			LastName:  "Rodriguez",
+			Phone:     "(352) 392-1692",
+			Role:      "staff",
+			ServiceID: eventsServiceID,
 		},
 	}
 
