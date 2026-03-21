@@ -107,6 +107,8 @@ backend/
 - `POST /api/notifications` - Create notification
 - `PUT /api/notifications/:id/read` - Mark notification as read
 
+Creating a booking automatically generates an unread notification for the booking user.
+
 ## Database Models
 
 ### User

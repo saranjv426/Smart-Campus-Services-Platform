@@ -51,6 +51,18 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
+	notification := models.Notification{
+		UserID:  booking.UserID,
+		Title:   "Booking Request Submitted",
+		Message: "Your booking request has been submitted and is pending approval.",
+		Type:    "booking",
+		IsRead:  false,
+	}
+	if err := h.db.Create(&notification).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking notification"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, booking)
 }
 
