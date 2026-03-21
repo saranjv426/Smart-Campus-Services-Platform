@@ -2,6 +2,7 @@ package router
 
 import (
 	"smart-campus-services/handlers"
+	"smart-campus-services/middleware"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -16,42 +17,60 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	reviewHandlers := handlers.NewReviewHandler(db)
 	userHandlers := handlers.NewUserHandler(db)
 	approvalHandlers := handlers.NewApprovalHandler(db)
+	authRequired := middleware.AuthRequired()
 
 	auth := r.Group("/api/auth")
 	{
 		auth.POST("/register", authHandlers.Register)
 		auth.POST("/login", authHandlers.Login)
-		auth.POST("/logout", authHandlers.Logout)
-		auth.POST("/refresh", authHandlers.RefreshToken)
+	}
+	authProtected := r.Group("/api/auth")
+	authProtected.Use(authRequired)
+	{
+		authProtected.POST("/logout", authHandlers.Logout)
+		authProtected.POST("/refresh", authHandlers.RefreshToken)
 	}
 
 	users := r.Group("/api/users")
 	{
 		users.GET("/:id", userHandlers.GetUser)
-		users.PUT("/:id", userHandlers.UpdateUser)
 		users.GET("/:id/profile", userHandlers.GetProfile)
+	}
+	usersProtected := r.Group("/api/users")
+	usersProtected.Use(authRequired)
+	{
+		usersProtected.PUT("/:id", userHandlers.UpdateUser)
 	}
 
 	services := r.Group("/api/services")
 	{
 		services.GET("", serviceHandlers.ListServices)
 		services.GET("/:id", serviceHandlers.GetService)
-		services.POST("", serviceHandlers.CreateService)
-		services.PUT("/:id", serviceHandlers.UpdateService)
-		services.DELETE("/:id", serviceHandlers.DeleteService)
 		services.GET("/category/:category", serviceHandlers.GetServicesByCategory)
+	}
+	servicesProtected := r.Group("/api/services")
+	servicesProtected.Use(authRequired)
+	{
+		servicesProtected.POST("", serviceHandlers.CreateService)
+		servicesProtected.PUT("/:id", serviceHandlers.UpdateService)
+		servicesProtected.DELETE("/:id", serviceHandlers.DeleteService)
 	}
 
 	bookings := r.Group("/api/bookings")
 	{
-		bookings.POST("", bookingHandlers.CreateBooking)
 		bookings.GET("/:id", bookingHandlers.GetBooking)
 		bookings.GET("/user/:userId", bookingHandlers.GetUserBookings)
-		bookings.PUT("/:id", bookingHandlers.UpdateBooking)
-		bookings.DELETE("/:id", bookingHandlers.CancelBooking)
+	}
+	bookingsProtected := r.Group("/api/bookings")
+	bookingsProtected.Use(authRequired)
+	{
+		bookingsProtected.POST("", bookingHandlers.CreateBooking)
+		bookingsProtected.PUT("/:id", bookingHandlers.UpdateBooking)
+		bookingsProtected.DELETE("/:id", bookingHandlers.CancelBooking)
 	}
 
 	approval := r.Group("/api/approval")
+	approval.Use(authRequired)
 	{
 		approval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
 		approval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
@@ -64,6 +83,7 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	}
 
 	notifications := r.Group("/api/notifications")
+	notifications.Use(authRequired)
 	{
 		notifications.GET("/:userId", notificationHandlers.GetNotifications)
 		notifications.POST("", notificationHandlers.CreateNotification)
@@ -72,9 +92,13 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 
 	reviews := r.Group("/api/reviews")
 	{
-		reviews.POST("", reviewHandlers.CreateReview)
 		reviews.GET("/service/:serviceId", reviewHandlers.GetServiceReviews)
 		reviews.GET("/:id", reviewHandlers.GetReview)
-		reviews.DELETE("/:id", reviewHandlers.DeleteReview)
+	}
+	reviewsProtected := r.Group("/api/reviews")
+	reviewsProtected.Use(authRequired)
+	{
+		reviewsProtected.POST("", reviewHandlers.CreateReview)
+		reviewsProtected.DELETE("/:id", reviewHandlers.DeleteReview)
 	}
 }
