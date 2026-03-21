@@ -82,28 +82,19 @@ backend/
 - `GET /api/users/:id/profile` - Get user profile with bookings and reviews
 
 ### Services
-- `GET /api/services` - Get services with optional search/filter/pagination
+- `GET /api/services` - Get all services
 - `GET /api/services/:id` - Get service by ID
 - `POST /api/services` - Create new service (Admin)
 - `PUT /api/services/:id` - Update service (Admin)
 - `DELETE /api/services/:id` - Delete service (Admin)
 - `GET /api/services/category/:category` - Get services by category
 
-Query parameters for `GET /api/services`:
-- `q` (string): case-insensitive partial match on service name and description
-- `category` (string): case-insensitive category filter
-- `activeOnly` (`true`/`false`): include only active services when `true`
-- `limit` (int): page size, min `1`, max `200`, default `100`
-- `offset` (int): number of rows to skip, default `0`
-- `sortBy` (string): one of `name`, `category`, `rating`, `createdAt`, `updatedAt`
-- `sortOrder` (string): `asc` (default) or `desc`
-
 ### Bookings
 - `POST /api/bookings` - Create new booking
 - `GET /api/bookings/:id` - Get booking by ID
 - `GET /api/bookings/user/:userId` - Get user's bookings
 - `PUT /api/bookings/:id` - Update booking
-- `DELETE /api/bookings/:id` - Cancel booking
+- `PATCH /api/bookings/:id/status` - Cancel booking by updating status to cancelled
 
 ### Reviews
 - `POST /api/reviews` - Create review
@@ -115,6 +106,8 @@ Query parameters for `GET /api/services`:
 - `GET /api/notifications/:userId` - Get user notifications
 - `POST /api/notifications` - Create notification
 - `PUT /api/notifications/:id/read` - Mark notification as read
+
+Creating a booking automatically generates an unread notification for the booking user.
 
 ## Database Models
 

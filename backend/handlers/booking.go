@@ -25,6 +25,10 @@ type CreateBookingRequest struct {
 	Notes     string    `json:"notes"`
 }
 
+type UpdateBookingStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=cancelled"`
+}
+
 // CreateBooking creates a new booking
 func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	var req CreateBookingRequest
@@ -44,6 +48,18 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 
 	if err := h.db.Create(&booking).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
+		return
+	}
+
+	notification := models.Notification{
+		UserID:  booking.UserID,
+		Title:   "Booking Request Submitted",
+		Message: "Your booking request has been submitted and is pending approval.",
+		Type:    "booking",
+		IsRead:  false,
+	}
+	if err := h.db.Create(&notification).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking notification"})
 		return
 	}
 
@@ -102,8 +118,19 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 // CancelBooking cancels a booking
 func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", "cancelled").Error; err != nil {
+	var req UpdateBookingStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", req.Status)
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel booking"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
 
