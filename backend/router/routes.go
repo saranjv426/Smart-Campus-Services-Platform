@@ -66,7 +66,7 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		bookingsProtected.POST("", bookingHandlers.CreateBooking)
 		bookingsProtected.PUT("/:id", bookingHandlers.UpdateBooking)
-		bookingsProtected.DELETE("/:id", bookingHandlers.CancelBooking)
+		bookingsProtected.PATCH("/:id/status", bookingHandlers.CancelBooking)
 	}
 
 	approval := r.Group("/api/approval")

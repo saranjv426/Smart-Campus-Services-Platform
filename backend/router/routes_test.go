@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"smart-campus-services/testutil"
@@ -34,6 +35,7 @@ func TestProtectedRoutesRequireAuth(t *testing.T) {
 		{name: "service update", method: http.MethodPut, path: "/api/services/123"},
 		{name: "booking create", method: http.MethodPost, path: "/api/bookings"},
 		{name: "booking update", method: http.MethodPut, path: "/api/bookings/123"},
+		{name: "booking cancel status", method: http.MethodPatch, path: "/api/bookings/123/status"},
 		{name: "approval approve", method: http.MethodPut, path: "/api/approval/bookings/123/approve"},
 		{name: "notification read", method: http.MethodPut, path: "/api/notifications/123/read"},
 		{name: "review create", method: http.MethodPost, path: "/api/reviews"},
@@ -79,7 +81,7 @@ func TestPublicRoutesRemainAccessibleWithoutAuth(t *testing.T) {
 func TestProtectedRouteAllowsBearerToken(t *testing.T) {
 	r := setupRouterTest(t)
 
-	req := testutil.NewJSONRequest(t, http.MethodPut, "/api/users/123", nil)
+	req := httptest.NewRequest(http.MethodPut, "/api/users/123", nil)
 	req.Header.Set("Authorization", "Bearer test-token")
 
 	resp := testutil.PerformRawRequest(r, req)
