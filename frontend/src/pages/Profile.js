@@ -1,8 +1,6 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { userAPI } from '../services/api';
+import { userAPI, reviewAPI } from '../services/api';
 import '../styles/Profile.css';
 
 function Profile() {
@@ -12,10 +10,19 @@ function Profile() {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     fetchUserProfile();
   }, [id]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserReviews(user.id);
+    }
+  }, [user]);
 
   const fetchUserProfile = async () => {
     try {
@@ -31,6 +38,19 @@ function Profile() {
     }
   };
 
+  const fetchUserReviews = async (userId) => {
+    try {
+      setLoadingReviews(true);
+      const response = await reviewAPI.getUserReviews(userId);
+      setReviews(response.data || []);
+    } catch (err) {
+      console.error('Failed to fetch reviews:', err);
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -38,7 +58,7 @@ function Profile() {
       [name]: value,
     }));
   };
-  // Handles updating user profile information through API : Issue #20
+
   const handleSaveProfile = async () => {
     try {
       await userAPI.updateUser(id, formData);
@@ -47,6 +67,17 @@ function Profile() {
       alert('Profile updated successfully!');
     } catch (err) {
       alert('Failed to update profile');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await reviewAPI.deleteReview(reviewId);
+      alert('Review deleted successfully!');
+      setReviews(reviews.filter(r => r.id !== reviewId));
+      setDeleteConfirm(null);
+    } catch (err) {
+      alert('Failed to delete review: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -174,17 +205,60 @@ function Profile() {
             </div>
           )}
 
-          {user.reviews && user.reviews.length > 0 && (
-            <div className="profile-section">
-              <h2>My Reviews</h2>
-              <div className="reviews-summary">
-                <p>Total Reviews: {user.reviews.length}</p>
-                <p>Average Rating: {(user.reviews.reduce((sum, r) => sum + r.rating, 0) / user.reviews.length).toFixed(1)} ⭐</p>
+          <div className="profile-section">
+            <h2>My Reviews ({reviews.length})</h2>
+            {loadingReviews ? (
+              <div className="loading">Loading reviews...</div>
+            ) : reviews.length === 0 ? (
+              <p className="no-reviews">You haven't written any reviews yet.</p>
+            ) : (
+              <div className="reviews-list">
+                {reviews.map(review => (
+                  <div key={review.id} className="review-item">
+                    <div className="review-header">
+                      <h3>{review.service?.name}</h3>
+                      <div className="review-meta">
+                        <span className="rating">{'⭐'.repeat(review.rating)} ({review.rating}/5)</span>
+                        <span className="date">{new Date(review.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <p className="review-comment">{review.comment}</p>
+                    <button 
+                      className="delete-review-btn"
+                      onClick={() => setDeleteConfirm(review.id)}
+                    >
+                      Delete Review
+                    </button>
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {deleteConfirm && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+          <div className="confirmation-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Review?</h3>
+            <p>Are you sure you want to delete this review? This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button 
+                className="confirm-btn"
+                onClick={() => handleDeleteReview(deleteConfirm)}
+              >
+                Delete
+              </button>
+              <button 
+                className="cancel-btn"
+                onClick={() => setDeleteConfirm(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
