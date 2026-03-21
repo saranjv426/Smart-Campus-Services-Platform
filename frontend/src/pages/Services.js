@@ -52,16 +52,18 @@ function Services() {
 
   const filterServices = () => {
     let filtered = services;
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(s => s.category === selectedCategory);
     }
 
-    if (searchTerm) {
-      filtered = filtered.filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    if (normalizedSearchTerm) {
+      filtered = filtered.filter((service) => {
+        const name = (service.name || '').toLowerCase();
+        const description = (service.description || '').toLowerCase();
+        return name.includes(normalizedSearchTerm) || description.includes(normalizedSearchTerm);
+      });
     }
 
     setFilteredServices(filtered);
@@ -74,7 +76,7 @@ function Services() {
       <div className="search-filter-container">
         <input
           type="text"
-          placeholder="Search services..."
+          placeholder="Search by name or description..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
