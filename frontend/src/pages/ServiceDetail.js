@@ -24,6 +24,7 @@ function ServiceDetail() {
     fetchServiceDetails();
   }, [id]);
 
+  // Fetch service details and associated reviews from backend APIs
   const fetchServiceDetails = async () => {
     try {
       setLoading(true);
@@ -41,6 +42,7 @@ function ServiceDetail() {
     }
   };
 
+  // Handles booking form submission including validation and API integration
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -77,6 +79,7 @@ function ServiceDetail() {
     }
   };
 
+  // Handles review submission and sends user rating & comment to backend
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -105,6 +108,7 @@ function ServiceDetail() {
   if (error) return <div className="error">{error}</div>;
   if (!service) return <div className="not-found">Service not found</div>;
 
+  // Calculate average rating from all reviews for display
   const averageRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : 'No ratings';
@@ -188,6 +192,7 @@ function ServiceDetail() {
         </div>
       )}
 
+      
       <div className="reviews-section">
         <h2>Reviews ({reviews.length})</h2>
         
