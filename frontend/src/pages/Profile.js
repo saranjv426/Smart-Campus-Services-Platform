@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { userAPI } from '../services/api';
@@ -36,7 +38,7 @@ function Profile() {
       [name]: value,
     }));
   };
-
+  // Handles updating user profile information through API : Issue #20
   const handleSaveProfile = async () => {
     try {
       await userAPI.updateUser(id, formData);

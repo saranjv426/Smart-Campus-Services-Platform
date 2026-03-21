@@ -30,6 +30,7 @@ export const authAPI = {
 
 export const userAPI = {
   getUser: (id) => apiClient.get(`/users/${id}`),
+  // API handler to update user profile information: Issue #20
   updateUser: (id, userData) => apiClient.put(`/users/${id}`, userData),
   getProfile: (id) => apiClient.get(`/users/${id}/profile`),
 };
@@ -44,7 +45,6 @@ export const serviceAPI = {
 };
 
 export const bookingAPI = {
-  getServices: () => apiClient.get('/services'),
   createBooking: (bookingData) => apiClient.post('/bookings', bookingData),
   getBooking: (id) => apiClient.get(`/bookings/${id}`),
   getUserBookings: (userId) => apiClient.get(`/bookings/user/${userId}`),
