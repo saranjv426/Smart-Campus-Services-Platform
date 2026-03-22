@@ -1,16 +1,15 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 
-	"smart-campus-services/testutil"
-	"smart-campus-services/validation"
-
 	"github.com/gin-gonic/gin"
+
+	"smart-campus-services/models"
 )
 
+<<<<<<< HEAD
 func setupAuthRouter(t *testing.T) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
@@ -18,66 +17,45 @@ func setupAuthRouter(t *testing.T) *gin.Engine {
 	if err := validation.Init(); err != nil {
 		t.Fatalf("failed to initialize validator: %v", err)
 	}
+=======
+func TestRegisterCreatesUser(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+>>>>>>> f85f4d5 (Add Sprint 2 backend tests and documentation)
 
-	db := testutil.NewTestDB(t)
-	h := NewAuthHandler(db)
+	router := gin.New()
+	router.POST("/register", handler.Register)
 
-	r := gin.New()
-	r.POST("/api/auth/register", h.Register)
-	r.POST("/api/auth/login", h.Login)
-	r.POST("/api/auth/logout", h.Logout)
-	r.POST("/api/auth/refresh", h.RefreshToken)
-	return r
-}
-
-func TestRegisterSuccess(t *testing.T) {
-	r := setupAuthRouter(t)
-
-	body := testutil.MustMarshal(map[string]any{
-		"email":     "student1@uf.edu",
-		"password":  "password123",
-		"firstName": "John",
-		"lastName":  "Doe",
-		"phone":     "+1234567890",
-		"role":      "student",
+	rec := performRequest(t, router, http.MethodPost, "/register", RegisterRequest{
+		Email:     "student@campus.edu",
+		Password:  "secret123",
+		FirstName: "Sam",
+		LastName:  "Student",
+		Phone:     "555-1000",
+		Role:      "student",
 	})
 
-	resp := testutil.PerformRequest(r, http.MethodPost, "/api/auth/register", body)
-	if resp.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, resp.Code, resp.Body.String())
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
-	var data map[string]any
-	if err := json.Unmarshal(resp.Body.Bytes(), &data); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-
-	if data["role"] != "student" {
-		t.Fatalf("expected role=student, got %v", data["role"])
-	}
-	if data["serviceId"] == nil {
-		t.Fatalf("expected serviceId key in response")
+	var user models.User
+	if err := db.Where("email = ?", "student@campus.edu").First(&user).Error; err != nil {
+		t.Fatalf("expected user to be persisted: %v", err)
 	}
 }
 
-func TestRegisterRejectsInvalidRole(t *testing.T) {
-	r := setupAuthRouter(t)
-
-	body := testutil.MustMarshal(map[string]any{
-		"email":     "student2@uf.edu",
-		"password":  "password123",
-		"firstName": "Jane",
-		"lastName":  "Doe",
-		"phone":     "+1234567890",
-		"role":      "manager",
+func TestRegisterRejectsDuplicateEmail(t *testing.T) {
+	db := setupTestDB(t)
+	createUserFixture(t, db, func(user *models.User) {
+		user.Email = "student@campus.edu"
 	})
 
-	resp := testutil.PerformRequest(r, http.MethodPost, "/api/auth/register", body)
-	if resp.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d body=%s", http.StatusBadRequest, resp.Code, resp.Body.String())
-	}
-}
+	handler := NewAuthHandler(db)
+	router := gin.New()
+	router.POST("/register", handler.Register)
 
+<<<<<<< HEAD
 func TestLoginSuccess(t *testing.T) {
 	r := setupAuthRouter(t)
 
@@ -101,5 +79,93 @@ func TestLoginSuccess(t *testing.T) {
 	loginResp := testutil.PerformRequest(r, http.MethodPost, "/api/auth/login", loginBody)
 	if loginResp.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, loginResp.Code, loginResp.Body.String())
+=======
+	rec := performRequest(t, router, http.MethodPost, "/register", RegisterRequest{
+		Email:     "student@campus.edu",
+		Password:  "secret123",
+		FirstName: "Sam",
+		LastName:  "Student",
+		Phone:     "555-1000",
+		Role:      "student",
+	})
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected status 409, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestLoginAuthenticatesUser(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db, func(user *models.User) {
+		user.Email = "student@campus.edu"
+		user.Password = "secret123"
+	})
+
+	handler := NewAuthHandler(db)
+	router := gin.New()
+	router.POST("/login", handler.Login)
+
+	rec := performRequest(t, router, http.MethodPost, "/login", LoginRequest{
+		Email:    "student@campus.edu",
+		Password: "secret123",
+	})
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	resp := decodeJSON[AuthResponse](t, rec)
+	if resp.ID != user.ID {
+		t.Fatalf("expected response ID %s, got %s", user.ID, resp.ID)
+	}
+}
+
+func TestLoginRejectsInvalidPassword(t *testing.T) {
+	db := setupTestDB(t)
+	createUserFixture(t, db, func(user *models.User) {
+		user.Email = "student@campus.edu"
+		user.Password = "secret123"
+	})
+
+	handler := NewAuthHandler(db)
+	router := gin.New()
+	router.POST("/login", handler.Login)
+
+	rec := performRequest(t, router, http.MethodPost, "/login", LoginRequest{
+		Email:    "student@campus.edu",
+		Password: "wrongpass",
+	})
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestLogoutReturnsSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+
+	router := gin.New()
+	router.POST("/logout", handler.Logout)
+
+	rec := performRequest(t, router, http.MethodPost, "/logout", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRefreshTokenReturnsPlaceholderToken(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+
+	router := gin.New()
+	router.POST("/refresh", handler.RefreshToken)
+
+	rec := performRequest(t, router, http.MethodPost, "/refresh", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+>>>>>>> f85f4d5 (Add Sprint 2 backend tests and documentation)
 	}
 }

@@ -1,137 +1,83 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
-	"smart-campus-services/models"
-	"smart-campus-services/testutil"
-
 	"github.com/gin-gonic/gin"
+
+	"smart-campus-services/models"
 )
 
-func setupUserRouter(t *testing.T) (*gin.Engine, string) {
-	t.Helper()
-	gin.SetMode(gin.TestMode)
+func TestGetUserReturnsUser(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
 
-	db := testutil.NewTestDB(t)
-	h := NewUserHandler(db)
+	handler := NewUserHandler(db)
+	router := gin.New()
+	router.GET("/users/:id", handler.GetUser)
 
-	user := models.User{
-		Email:     "user1@campus.edu",
-		Password:  "password123",
-		FirstName: "John",
-		LastName:  "Doe",
-		Phone:     "+1111111111",
-		Role:      "student",
-	}
-	if err := db.Create(&user).Error; err != nil {
-		t.Fatalf("failed to seed user: %v", err)
+	rec := performRequest(t, router, http.MethodGet, "/users/"+user.ID, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
-	r := gin.New()
-	r.GET("/api/users/:id", h.GetUser)
-	r.PUT("/api/users/:id", h.UpdateUser)
-	r.GET("/api/users/:id/profile", h.GetProfile)
-
-	return r, user.ID
-}
-
-func TestGetUserSuccess(t *testing.T) {
-	r, userID := setupUserRouter(t)
-
-	resp := testutil.PerformRequest(r, http.MethodGet, "/api/users/"+userID, nil)
-	if resp.Code != http.StatusOK {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusOK, resp.Code, resp.Body.String())
-	}
-
-	var data map[string]any
-	if err := json.Unmarshal(resp.Body.Bytes(), &data); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
-	}
-	if data["id"] != userID {
-		t.Fatalf("expected id=%s, got %v", userID, data["id"])
+	resp := decodeJSON[models.User](t, rec)
+	if resp.ID != user.ID {
+		t.Fatalf("expected user ID %s, got %s", user.ID, resp.ID)
 	}
 }
 
-func TestUpdateUserSuccess(t *testing.T) {
-	r, userID := setupUserRouter(t)
+func TestUpdateUserPersistsChanges(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
 
-	body := testutil.MustMarshal(map[string]any{
-		"firstName":  "Jane",
-		"department": "Computer Science",
-		"bio":        "Student profile",
+	handler := NewUserHandler(db)
+	router := gin.New()
+	router.PUT("/users/:id", handler.UpdateUser)
+
+	rec := performRequest(t, router, http.MethodPut, "/users/"+user.ID, UpdateUserRequest{
+		FirstName:  "Updated",
+		LastName:   "Name",
+		Phone:      "555-9999",
+		Department: "Engineering",
+		AvatarURL:  "https://example.com/avatar.png",
+		Bio:        "Updated bio",
 	})
 
-	resp := testutil.PerformRequest(r, http.MethodPut, "/api/users/"+userID, body)
-	if resp.Code != http.StatusOK {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusOK, resp.Code, resp.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
-	check := testutil.PerformRequest(r, http.MethodGet, "/api/users/"+userID, nil)
-	if check.Code != http.StatusOK {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusOK, check.Code, check.Body.String())
+	var updated models.User
+	if err := db.First(&updated, "id = ?", user.ID).Error; err != nil {
+		t.Fatalf("failed to reload user: %v", err)
 	}
-
-	var updated map[string]any
-	if err := json.Unmarshal(check.Body.Bytes(), &updated); err != nil {
-		t.Fatalf("failed to decode updated user: %v", err)
-	}
-	if updated["firstName"] != "Jane" {
-		t.Fatalf("expected firstName=Jane, got %v", updated["firstName"])
+	if updated.Department != "Engineering" {
+		t.Fatalf("expected department to be updated, got %s", updated.Department)
 	}
 }
 
-func TestGetProfileUserNotFound(t *testing.T) {
-	r, _ := setupUserRouter(t)
+func TestGetProfileReturnsBookingsAndReviews(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+	createBookingFixture(t, db, user.ID, service.ID)
+	createReviewFixture(t, db, user.ID, service.ID, 5)
 
-	resp := testutil.PerformRequest(r, http.MethodGet, "/api/users/non-existent-id/profile", nil)
-	if resp.Code != http.StatusNotFound {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusNotFound, resp.Code, resp.Body.String())
-	}
-}
+	handler := NewUserHandler(db)
+	router := gin.New()
+	router.GET("/users/:id/profile", handler.GetProfile)
 
-func TestGetProfileSuccess(t *testing.T) {
-	r, userID := setupUserRouter(t)
+	rec := performRequest(t, router, http.MethodGet, "/users/"+user.ID+"/profile", nil)
 
-	resp := testutil.PerformRequest(r, http.MethodGet, "/api/users/"+userID+"/profile", nil)
-	if resp.Code != http.StatusOK {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusOK, resp.Code, resp.Body.String())
-	}
-
-	var profile map[string]any
-	if err := json.Unmarshal(resp.Body.Bytes(), &profile); err != nil {
-		t.Fatalf("failed to decode profile: %v", err)
-	}
-	if profile["id"] != userID {
-		t.Fatalf("expected id=%s, got %v", userID, profile["id"])
-	}
-}
-
-func TestUpdateUserInvalidJSON(t *testing.T) {
-	r, userID := setupUserRouter(t)
-
-	resp := testutil.PerformRequest(r, http.MethodPut, "/api/users/"+userID, []byte("{invalid json"))
-	if resp.Code != http.StatusBadRequest {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusBadRequest, resp.Code, resp.Body.String())
-	}
-}
-
-func TestGetUserNotFound(t *testing.T) {
-	r, _ := setupUserRouter(t)
-
-	resp := testutil.PerformRequest(r, http.MethodGet, "/api/users/missing", nil)
-	if resp.Code != http.StatusNotFound {
-		t.Fatalf("expected %d, got %d body=%s", http.StatusNotFound, resp.Code, resp.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
-	var data map[string]any
-	if err := json.Unmarshal(resp.Body.Bytes(), &data); err != nil {
-		t.Fatalf("failed to decode error: %v", err)
-	}
-	if data["error"] != "User not found" {
-		t.Fatalf("unexpected error response: %s", fmt.Sprint(data["error"]))
+	profile := decodeJSON[models.User](t, rec)
+	if len(profile.Bookings) != 1 || len(profile.Reviews) != 1 {
+		t.Fatalf("expected one booking and one review, got %+v", profile)
 	}
 }
