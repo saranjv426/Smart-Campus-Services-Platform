@@ -452,3 +452,27 @@ GOCACHE=$(pwd)/.gocache go test ./...
 ```
 
 This local `GOCACHE` path avoids sandbox permission issues with the default Go build cache location.
+
+
+## Cypress Test (Frontend)
+
+- Implemented a Cypress end-to-end test to validate user interaction flow.
+- The test performs the following:
+  - Visits the homepage (http://localhost:3000)
+  - Clicks the "Get Started" button
+  - Navigates to the Register page (/register)
+  - Verifies URL contains "/register"
+  - Confirms "Register" page content is displayed
+
+**Test File:**
+frontend/cypress/e2e/spec.cy.js
+
+### Cypress Test Output
+
+The following screenshots demonstrate the successful execution of the Cypress test, including navigation to the Register page and verification of UI content.
+
+#### Test Execution Result
+![Cypress Test 1](frontend/cypress/Screenshots/cypress1.png)
+
+#### Register Page After Navigation
+![Cypress Test 2](frontend/cypress/Screenshots/cypress2.jpg)
