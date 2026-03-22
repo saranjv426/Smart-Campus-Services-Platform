@@ -60,6 +60,10 @@ function Profile() {
   };
 
   const handleSaveProfile = async () => {
+    if (!formData.firstName || !formData.lastName) {
+    alert('Name fields cannot be empty');
+    return;
+   }
     try {
       await userAPI.updateUser(id, formData);
       setUser(formData);
