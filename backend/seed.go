@@ -30,6 +30,96 @@ func seedDatabase(db *gorm.DB) error {
 		return err
 	}
 
+	// Add more services across different categories
+	additionalServices := []models.Service{
+		{
+			Name:        "Main Dining Hall",
+			Description: "Campus dining facility with variety of meals and snacks.",
+			Category:    "dining",
+			Location:    "Student Center",
+			Email:       "dining@campus.edu",
+			Phone:       "555-1001",
+			Hours:       "Mon-Sun 7:00 AM - 10:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Campus Shuttle Service",
+			Description: "Free shuttle bus service connecting all campus buildings and nearby stations.",
+			Category:    "transportation",
+			Location:    "Transportation Hub",
+			Email:       "transport@campus.edu",
+			Phone:       "555-1002",
+			Hours:       "Mon-Fri 6:00 AM - 11:00 PM, Sat-Sun 8:00 AM - 9:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Campus Health Center",
+			Description: "Medical and health services for students and staff.",
+			Category:    "health",
+			Location:    "Health Services Building",
+			Email:       "health@campus.edu",
+			Phone:       "555-1003",
+			Hours:       "Mon-Fri 9:00 AM - 6:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Reference Desk",
+			Description: "Librarian assistance for research and information requests.",
+			Category:    "library",
+			Location:    "Main Library - 2nd Floor",
+			Email:       "reference@campus.edu",
+			Phone:       "555-1004",
+			Hours:       "Mon-Fri 10:00 AM - 6:00 PM, Sat 12:00 PM - 4:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Campus Cafe",
+			Description: "Quick service cafe with coffee, pastries, and light meals.",
+			Category:    "dining",
+			Location:    "Multiple Locations",
+			Email:       "cafe@campus.edu",
+			Phone:       "555-1005",
+			Hours:       "Mon-Fri 7:30 AM - 5:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Parking Services",
+			Description: "Campus parking permit management and vehicle registration.",
+			Category:    "transportation",
+			Location:    "Transportation Hub",
+			Email:       "parking@campus.edu",
+			Phone:       "555-1006",
+			Hours:       "Mon-Fri 8:00 AM - 5:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Counseling Services",
+			Description: "Mental health and counseling support for students.",
+			Category:    "health",
+			Location:    "Student Services Building",
+			Email:       "counseling@campus.edu",
+			Phone:       "555-1007",
+			Hours:       "Mon-Fri 9:00 AM - 5:00 PM",
+			IsActive:    true,
+		},
+		{
+			Name:        "Study Rooms",
+			Description: "Group study and collaboration spaces available for reservation.",
+			Category:    "library",
+			Location:    "Main Library - Various Floors",
+			Email:       "rooms@campus.edu",
+			Phone:       "555-1008",
+			Hours:       "Mon-Fri 8:00 AM - 8:00 PM, Weekends 10:00 AM - 6:00 PM",
+			IsActive:    true,
+		},
+	}
+
+	for _, svc := range additionalServices {
+		if err := db.Create(&svc).Error; err != nil {
+			return err
+		}
+	}
+
 	users := []models.User{
 		{
 			Email:     "student@campus.edu",
