@@ -63,10 +63,21 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 // MarkAsRead marks a notification as read
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.db.Model(&models.Notification{}).Where("id = ?", id).Update("is_read", true).Error; err != nil {
+	var notification models.Notification
+	if err := h.db.First(&notification, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notification"})
+		return
+	}
+
+	notification.IsRead = true
+	if err := h.db.Save(&notification).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notification"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Notification marked as read"})
+	c.JSON(http.StatusOK, notification)
 }

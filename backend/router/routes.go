@@ -53,6 +53,7 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		servicesProtected.POST("", serviceHandlers.CreateService)
 		servicesProtected.PUT("/:id", serviceHandlers.UpdateService)
+		servicesProtected.PATCH("/:id/active", serviceHandlers.UpdateServiceActive)
 		servicesProtected.DELETE("/:id", serviceHandlers.DeleteService)
 	}
 

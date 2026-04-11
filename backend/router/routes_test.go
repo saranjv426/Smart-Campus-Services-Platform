@@ -33,6 +33,7 @@ func TestProtectedRoutesRequireAuth(t *testing.T) {
 		{name: "user update", method: http.MethodPut, path: "/api/users/123"},
 		{name: "service create", method: http.MethodPost, path: "/api/services"},
 		{name: "service update", method: http.MethodPut, path: "/api/services/123"},
+		{name: "service toggle active", method: http.MethodPatch, path: "/api/services/123/active"},
 		{name: "booking create", method: http.MethodPost, path: "/api/bookings"},
 		{name: "booking update", method: http.MethodPut, path: "/api/bookings/123"},
 		{name: "booking cancel status", method: http.MethodPatch, path: "/api/bookings/123/status"},
