@@ -8,105 +8,103 @@ const StaffDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [notes, setNotes] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [actionType, setActionType] = useState('');
   const [staffInfo, setStaffInfo] = useState(null);
 
   useEffect(() => {
-    // Get staff info from localStorage
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    
+
     if (!token || !user) {
       navigate('/login');
       return;
     }
 
-    const userData = JSON.parse(user);
-    if (userData.role !== 'staff') {
-      navigate('/');
-      return;
-    }
+    try {
+      const userData = JSON.parse(user);
 
-    setStaffInfo(userData);
-    fetchPendingBookings(userData.id);
+      if (userData.role !== 'staff') {
+        navigate('/');
+        return;
+      }
+
+      setStaffInfo(userData);
+      fetchPendingBookings(userData.id, token);
+    } catch (err) {
+      console.error('Failed to parse stored user data:', err);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
   }, [navigate]);
 
-  const fetchPendingBookings = async (staffId) => {
+  const fetchPendingBookings = async (staffId, token) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+
       const response = await axios.get(
         `http://localhost:8080/api/approval/staff/${staffId}/pending`,
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
-      // Handle both array and {data: array} response formats
-      const bookingsData = Array.isArray(response.data) ? response.data : (response.data.data || []);
+
+      const bookingsData = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
       setBookings(bookingsData);
       setError('');
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to load pending bookings';
+      console.error('Failed to load pending bookings:', err);
+      const errorMsg =
+        err.response?.data?.error || 'Failed to load pending bookings';
       setError(errorMsg);
-      console.error(err);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = (booking) => {
-    setSelectedBooking(booking);
-    setActionType('approve');
-    setNotes('');
-    setShowModal(true);
-  };
-
-  const handleReject = (booking) => {
-    setSelectedBooking(booking);
-    setActionType('reject');
-    setNotes('');
-    setShowModal(true);
-  };
-
-  const submitAction = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const endpoint = actionType === 'approve' 
-        ? `/api/approval/bookings/${selectedBooking.id}/approve`
-        : `/api/approval/bookings/${selectedBooking.id}/reject`;
-
-      await axios.put(
-        `http://localhost:8080${endpoint}`,
-        { 
-          status: actionType === 'approve' ? 'approved' : 'rejected',
-          approvalNotes: notes,
-          staffId: staffInfo.id
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      setShowModal(false);
-      setSelectedBooking(null);
-      fetchPendingBookings(staffInfo.id);
-    } catch (err) {
-      setError(`Failed to ${actionType} booking`);
-      console.error(err);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'N/A';
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
+  };
+
+  const getServiceName = (booking) => {
+    return booking.service?.name || booking.serviceName || 'Service Not Available';
+  };
+
+  const getStudentName = (booking) => {
+    if (booking.user?.firstName || booking.user?.lastName) {
+      return `${booking.user?.firstName || ''} ${booking.user?.lastName || ''}`.trim();
+    }
+    return booking.studentName || 'N/A';
+  };
+
+  const getStudentEmail = (booking) => {
+    return booking.user?.email || booking.email || 'N/A';
+  };
+
+  const getStudentPhone = (booking) => {
+    return booking.user?.phone || booking.phone || 'N/A';
   };
 
   return (
@@ -114,16 +112,12 @@ const StaffDashboard = () => {
       <div className="dashboard-header">
         <div>
           <h1>Staff Dashboard</h1>
-          <p className="welcome-text">Welcome, {staffInfo?.firstName} {staffInfo?.lastName}</p>
+          <p className="welcome-text">
+            Welcome, {staffInfo?.firstName} {staffInfo?.lastName}
+          </p>
         </div>
-        <button 
-          className="logout-btn"
-          onClick={() => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            navigate('/login');
-          }}
-        >
+
+        <button className="logout-btn" onClick={handleLogout}>
           Logout
         </button>
       </div>
@@ -132,7 +126,7 @@ const StaffDashboard = () => {
 
       <div className="bookings-section">
         <div className="section-header">
-          <h2>Pending Approvals</h2>
+          <h2>Pending Bookings</h2>
           <span className="badge">{bookings.length}</span>
         </div>
 
@@ -141,117 +135,58 @@ const StaffDashboard = () => {
         ) : bookings.length === 0 ? (
           <div className="empty-state">
             <p>No pending bookings</p>
-            <p className="secondary">All bookings have been reviewed</p>
+            <p className="secondary">There are currently no bookings awaiting review.</p>
           </div>
         ) : (
           <div className="bookings-grid">
             {bookings.map((booking) => (
               <div key={booking.id} className="booking-card">
                 <div className="booking-header">
-                  <h3 className="service-name">{booking.service?.name}</h3>
+                  <h3 className="service-name">{getServiceName(booking)}</h3>
                   <span className="status-badge pending">Pending</span>
                 </div>
 
                 <div className="booking-details">
                   <div className="detail-item">
                     <span className="label">Student Name:</span>
-                    <span className="value">{booking.user?.firstName} {booking.user?.lastName}</span>
+                    <span className="value">{getStudentName(booking)}</span>
                   </div>
+
                   <div className="detail-item">
                     <span className="label">Email:</span>
-                    <span className="value">{booking.user?.email}</span>
+                    <span className="value">{getStudentEmail(booking)}</span>
                   </div>
+
                   <div className="detail-item">
                     <span className="label">Phone:</span>
-                    <span className="value">{booking.user?.phone || 'N/A'}</span>
+                    <span className="value">{getStudentPhone(booking)}</span>
                   </div>
+
                   <div className="detail-item">
                     <span className="label">Start Time:</span>
                     <span className="value">{formatDate(booking.startTime)}</span>
                   </div>
+
                   <div className="detail-item">
                     <span className="label">End Time:</span>
                     <span className="value">{formatDate(booking.endTime)}</span>
                   </div>
+
                   <div className="detail-item">
                     <span className="label">Reason:</span>
                     <span className="value">{booking.notes || 'N/A'}</span>
                   </div>
+
                   <div className="detail-item">
                     <span className="label">Requested:</span>
                     <span className="value">{formatDate(booking.createdAt)}</span>
                   </div>
-                </div>
-
-                <div className="booking-actions">
-                  <button 
-                    className="btn-reject"
-                    onClick={() => handleReject(booking)}
-                  >
-                    Reject
-                  </button>
-                  <button 
-                    className="btn-approve"
-                    onClick={() => handleApprove(booking)}
-                  >
-                    Approve
-                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Modal for approval/rejection */}
-      {showModal && selectedBooking && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>
-                {actionType === 'approve' ? 'Approve' : 'Reject'} Booking
-              </h3>
-              <button 
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <p className="booking-info">
-                <strong>{selectedBooking.service?.name}</strong> - {selectedBooking.user?.firstName} {selectedBooking.user?.lastName}
-              </p>
-              
-              <div className="form-group">
-                <label>Additional Notes (Optional)</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add any notes about this approval/rejection..."
-                  rows="4"
-                />
-              </div>
-
-              <div className="modal-actions">
-                <button 
-                  className="btn-cancel"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className={actionType === 'approve' ? 'btn-approve' : 'btn-reject'}
-                  onClick={submitAction}
-                >
-                  {actionType === 'approve' ? 'Approve Booking' : 'Reject Booking'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

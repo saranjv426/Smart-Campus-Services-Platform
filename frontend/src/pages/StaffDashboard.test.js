@@ -1,13 +1,15 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import StaffDashboard from './StaffDashboard';
 
 jest.mock('axios');
+
+const mockNavigate = jest.fn();
+
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 describe('StaffDashboard Page Component', () => {
@@ -22,30 +24,41 @@ describe('StaffDashboard Page Component', () => {
   const mockBookings = [
     {
       id: 1,
-      userId: 2,
-      serviceId: 1,
-      serviceName: 'Main Library',
       status: 'pending',
       startTime: '2024-02-20T10:00:00Z',
       endTime: '2024-02-20T12:00:00Z',
       createdAt: '2024-02-15T10:00:00Z',
+      notes: 'Need projector access',
+      service: {
+        name: 'Main Library',
+      },
+      user: {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        phone: '123-456-7890',
+      },
     },
     {
       id: 2,
-      userId: 3,
-      serviceId: 1,
-      serviceName: 'Study Room',
       status: 'pending',
-      startTime: '2024-02-20T14:00:00Z',
-      endTime: '2024-02-20T16:00:00Z',
-      createdAt: '2024-02-15T10:00:00Z',
+      startTime: '2024-02-21T14:00:00Z',
+      endTime: '2024-02-21T16:00:00Z',
+      createdAt: '2024-02-16T09:30:00Z',
+      notes: 'Group study session',
+      service: {
+        name: 'Study Room',
+      },
+      user: {
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@example.com',
+        phone: '555-111-2222',
+      },
     },
   ];
 
   const renderStaffDashboard = () => {
-    localStorage.setItem('token', 'mock-token');
-    localStorage.setItem('user', JSON.stringify(mockStaff));
-
     render(
       <BrowserRouter>
         <StaffDashboard />
@@ -56,47 +69,50 @@ describe('StaffDashboard Page Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    mockNavigate.mockClear();
+
+    localStorage.setItem('token', 'mock-token');
+    localStorage.setItem('user', JSON.stringify(mockStaff));
+
     axios.get.mockResolvedValue({ data: mockBookings });
-    axios.put.mockResolvedValue({ data: { success: true } });
   });
 
-  test('redirects to login if no token', () => {
+  test('redirects to login if no token', async () => {
     localStorage.clear();
 
-    render(
-      <BrowserRouter>
-        <StaffDashboard />
-      </BrowserRouter>
-    );
-
-    // Navigation to login should occur
-  });
-
-  test('redirects to home if user is not staff', () => {
-    const notStaffUser = { ...mockStaff, role: 'student' };
-    localStorage.setItem('user', JSON.stringify(notStaffUser));
-    localStorage.setItem('token', 'mock-token');
-
-    render(
-      <BrowserRouter>
-        <StaffDashboard />
-      </BrowserRouter>
-    );
-
-    // Navigation to home should occur
-  });
-
-  test('renders staff dashboard', async () => {
     renderStaffDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText(/Staff Dashboard|staff|Dashboard/i)).toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith('/login');
+    });
+  });
+
+  test('redirects to home if user is not staff', async () => {
+    const notStaffUser = { ...mockStaff, role: 'student' };
+    localStorage.setItem('token', 'mock-token');
+    localStorage.setItem('user', JSON.stringify(notStaffUser));
+
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/');
+    });
+  });
+
+  test('renders staff dashboard heading and welcome text', async () => {
+    renderStaffDashboard();
+
+    expect(screen.getByText('Staff Dashboard')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Welcome, Staff Member/i)).toBeInTheDocument();
     });
   });
 
   test('displays loading state initially', () => {
     renderStaffDashboard();
-    // Loading might be brief
+
+    expect(screen.getByText(/Loading pending bookings.../i)).toBeInTheDocument();
   });
 
   test('fetches pending bookings on mount', async () => {
@@ -104,8 +120,12 @@ describe('StaffDashboard Page Component', () => {
 
     await waitFor(() => {
       expect(axios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/approval/staff'),
-        expect.any(Object)
+        'http://localhost:8080/api/approval/staff/1/pending',
+        {
+          headers: {
+            Authorization: 'Bearer mock-token',
+          },
+        }
       );
     });
   });
@@ -116,187 +136,97 @@ describe('StaffDashboard Page Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
       expect(screen.getByText('Study Room')).toBeInTheDocument();
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
     });
   });
 
-  test('displays approve button for each pending booking', async () => {
+  test('shows pending bookings count badge', async () => {
     renderStaffDashboard();
 
     await waitFor(() => {
-      const approveButtons = screen.getAllByRole('button', { name: /approve/i });
-      expect(approveButtons.length).toBe(2);
+      expect(screen.getByText('2')).toBeInTheDocument();
     });
   });
 
-  test('displays reject button for each pending booking', async () => {
+  test('displays booking detail fields in cards', async () => {
     renderStaffDashboard();
 
     await waitFor(() => {
-      const rejectButtons = screen.getAllByRole('button', { name: /reject/i });
-      expect(rejectButtons.length).toBe(2);
-    });
-  });
-
-  test('opens modal when approve button clicked', async () => {
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('Main Library')).toBeInTheDocument();
-    });
-
-    const approveButtons = screen.getAllByRole('button', { name: /approve/i });
-    fireEvent.click(approveButtons[0]);
-
-    await waitFor(() => {
-      expect(screen.getByText(/notes|approval/i)).toBeInTheDocument();
-    });
-  });
-
-  test('opens modal when reject button clicked', async () => {
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('Main Library')).toBeInTheDocument();
-    });
-
-    const rejectButtons = screen.getAllByRole('button', { name: /reject/i });
-    fireEvent.click(rejectButtons[0]);
-
-    await waitFor(() => {
-      expect(screen.getByText(/notes|reason/i)).toBeInTheDocument();
-    });
-  });
-
-  test('submits approval action with notes', async () => {
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('Main Library')).toBeInTheDocument();
-    });
-
-    const approveButtons = screen.getAllByRole('button', { name: /approve/i });
-    fireEvent.click(approveButtons[0]);
-
-    await waitFor(() => {
-      const notesInput = screen.getByPlaceholderText(/notes/i);
-      expect(notesInput).toBeInTheDocument();
-    });
-
-    const notesInput = screen.getByPlaceholderText(/notes/i);
-    await userEvent.type(notesInput, 'Approved');
-
-    const submitButton = screen.getByRole('button', { name: /submit|confirm/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(axios.put).toHaveBeenCalledWith(
-        expect.stringContaining('/approve'),
-        expect.any(Object),
-        expect.any(Object)
-      );
-    });
-  });
-
-  test('submits rejection action with notes', async () => {
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('Main Library')).toBeInTheDocument();
-    });
-
-    const rejectButtons = screen.getAllByRole('button', { name: /reject/i });
-    fireEvent.click(rejectButtons[0]);
-
-    await waitFor(() => {
-      const notesInput = screen.getByPlaceholderText(/notes/i);
-      expect(notesInput).toBeInTheDocument();
-    });
-
-    const notesInput = screen.getByPlaceholderText(/notes/i);
-    await userEvent.type(notesInput, 'Not available');
-
-    const submitButton = screen.getByRole('button', { name: /submit|confirm/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(axios.put).toHaveBeenCalledWith(
-        expect.stringContaining('/reject'),
-        expect.any(Object),
-        expect.any(Object)
-      );
+      expect(screen.getAllByText('Student Name:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Email:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Phone:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Start Time:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('End Time:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Reason:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Requested:').length).toBeGreaterThan(0);
     });
   });
 
   test('displays error message on fetch failure', async () => {
-    axios.get.mockRejectedValueOnce(new Error('Failed to load'));
+    axios.get.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'Failed to load pending bookings',
+        },
+      },
+    });
 
     renderStaffDashboard();
 
     await waitFor(() => {
-      const errorText = screen.queryByText(/failed|error/i);
-      // Depending on implementation
+      expect(
+        screen.getByText('Failed to load pending bookings')
+      ).toBeInTheDocument();
     });
   });
 
-  test('displays error message on action failure', async () => {
-    axios.put.mockRejectedValueOnce(new Error('Failed to approve'));
+  test('displays empty state when there are no pending bookings', async () => {
+    axios.get.mockResolvedValueOnce({ data: [] });
+
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('No pending bookings')).toBeInTheDocument();
+      expect(
+        screen.getByText('There are currently no bookings awaiting review.')
+      ).toBeInTheDocument();
+    });
+  });
+
+  test('handles API response wrapped in data property', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: {
+        data: mockBookings,
+      },
+    });
 
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
-    });
-
-    const approveButtons = screen.getAllByRole('button', { name: /approve/i });
-    fireEvent.click(approveButtons[0]);
-
-    await waitFor(() => {
-      const notesInput = screen.getByPlaceholderText(/notes/i);
-      expect(notesInput).toBeInTheDocument();
-    });
-
-    const submitButton = screen.getByRole('button', { name: /submit|confirm/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      const errorMsg = screen.queryByText(/failed|error/i);
-      // Error message should appear
+      expect(screen.getByText('Study Room')).toBeInTheDocument();
     });
   });
 
-  test('closes modal after successful action', async () => {
+  test('falls back gracefully when booking fields are missing', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: [
+        {
+          id: 99,
+          startTime: null,
+          endTime: null,
+          createdAt: null,
+          notes: '',
+        },
+      ],
+    });
+
     renderStaffDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('Main Library')).toBeInTheDocument();
+      expect(screen.getByText('Service Not Available')).toBeInTheDocument();
+      expect(screen.getAllByText('N/A').length).toBeGreaterThan(0);
     });
-
-    const approveButtons = screen.getAllByRole('button', { name: /approve/i });
-    fireEvent.click(approveButtons[0]);
-
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText(/notes/i)).toBeInTheDocument();
-    });
-
-    const submitButton = screen.getByRole('button', { name: /submit|confirm/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      // Modal should close
-      const modal = screen.queryByPlaceholderText(/notes/i);
-      // Depends on re-render timing
-    });
-  });
-
-  test('displays booking details in card', async () => {
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('Main Library')).toBeInTheDocument();
-    });
-
-    // Booking details should be visible
-    const cards = screen.getAllByText(/2024-02-20T/);
-    expect(cards.length).toBeGreaterThan(0);
   });
 });
