@@ -5,12 +5,9 @@ import (
 	"testing"
 	"time"
 
-<<<<<<< HEAD
 	"smart-campus-services/models"
 	"smart-campus-services/testutil"
 
-=======
->>>>>>> f85f4d5 (Add Sprint 2 backend tests and documentation)
 	"github.com/gin-gonic/gin"
 
 	"smart-campus-services/models"
