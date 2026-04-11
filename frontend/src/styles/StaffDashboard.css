@@ -203,7 +203,7 @@
   color: white;
 }
 
-.btn-approve:hover {
+.btn-approve:hover:not(:disabled) {
   transform: scale(1.02);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
@@ -214,9 +214,16 @@
   border: 2px solid #dc3545;
 }
 
-.btn-reject:hover {
+.btn-reject:hover:not(:disabled) {
   background-color: #dc3545;
   color: white;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Modal Styles */
@@ -226,19 +233,20 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease-out;
+  padding: 20px;
 }
 
 .modal {
   background: white;
-  border-radius: 12px;
-  max-width: 500px;
-  width: 90%;
+  border-radius: 14px;
+  max-width: 520px;
+  width: 100%;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -249,7 +257,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 25px;
+  padding: 22px 25px;
   border-bottom: 1px solid #e9ecef;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -261,22 +269,21 @@
 }
 
 .close-btn {
-  background: none;
+  background: transparent;
   border: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   cursor: pointer;
-  padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  border-radius: 50%;
 }
 
-.close-btn:hover {
-  transform: scale(1.1);
+.close-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .modal-body {
@@ -287,7 +294,6 @@
   background-color: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
-  margin-bottom: 20px;
   margin: 0 0 20px 0;
   color: #555;
 }
@@ -313,6 +319,7 @@
   font-size: 0.95rem;
   resize: vertical;
   transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-group textarea:focus {
@@ -329,7 +336,6 @@
 .modal-actions button {
   flex: 1;
   padding: 12px 20px;
-  border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
@@ -343,7 +349,7 @@
   border: 2px solid #e9ecef;
 }
 
-.btn-cancel:hover {
+.btn-cancel:hover:not(:disabled) {
   background-color: #e9ecef;
 }
 
@@ -403,6 +409,10 @@
   }
 
   .modal {
-    width: 95%;
+    width: 100%;
+  }
+
+  .modal-actions {
+    flex-direction: column;
   }
 }
