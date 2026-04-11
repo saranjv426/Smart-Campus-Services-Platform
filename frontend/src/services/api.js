@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-// Base API URL (uses environment variable or defaults to local backend)
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
-// Axios client configuration with default headers for all API requests
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -23,7 +21,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Authentication-related API calls (register, login, logout, token refresh)
 export const authAPI = {
   register: (userData) => apiClient.post('/auth/register', userData),
   login: (credentials) => apiClient.post('/auth/login', credentials),
@@ -50,12 +47,14 @@ export const bookingAPI = {
   getServices: () => apiClient.get('/services'),
   createBooking: (bookingData) => apiClient.post('/bookings', bookingData),
   getBooking: (id) => apiClient.get(`/bookings/${id}`),
-  getUserBookings: (userId) => apiClient.get(`/bookings/user/${userId}`),
+  getUserBookings: (userId, status) => apiClient.get(
+    `/bookings/user/${userId}`,
+    status ? { params: { status } } : undefined
+  ),
   updateBooking: (id, bookingData) => apiClient.put(`/bookings/${id}`, bookingData),
   cancelBooking: (id) => apiClient.delete(`/bookings/${id}`),
 };
 
-// Review-related API calls for creating, fetching, and deleting reviews
 export const reviewAPI = {
   createReview: (reviewData) => apiClient.post('/reviews', reviewData),
   getServiceReviews: (serviceId) => apiClient.get(`/reviews/service/${serviceId}`),

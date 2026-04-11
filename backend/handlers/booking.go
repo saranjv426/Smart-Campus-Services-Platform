@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,14 @@ import (
 
 type BookingHandler struct {
 	db *gorm.DB
+}
+
+var allowedBookingStatuses = map[string]struct{}{
+	"pending":   {},
+	"approved":  {},
+	"rejected":  {},
+	"completed": {},
+	"cancelled": {},
 }
 
 func NewBookingHandler(db *gorm.DB) *BookingHandler {
@@ -23,10 +32,6 @@ type CreateBookingRequest struct {
 	StartTime time.Time `json:"startTime" binding:"required"`
 	EndTime   time.Time `json:"endTime" binding:"required"`
 	Notes     string    `json:"notes"`
-}
-
-type UpdateBookingStatusRequest struct {
-	Status string `json:"status" binding:"required,oneof=cancelled"`
 }
 
 // CreateBooking creates a new booking
@@ -48,18 +53,6 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 
 	if err := h.db.Create(&booking).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking"})
-		return
-	}
-
-	notification := models.Notification{
-		UserID:  booking.UserID,
-		Title:   "Booking Request Submitted",
-		Message: "Your booking request has been submitted and is pending approval.",
-		Type:    "booking",
-		IsRead:  false,
-	}
-	if err := h.db.Create(&notification).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking notification"})
 		return
 	}
 
@@ -86,14 +79,37 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 // GetUserBookings returns all bookings for a user
 func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 	userId := c.Param("userId")
+	status := normalizeBookingStatus(c.Query("status"))
 	var bookings []models.Booking
 
-	if err := h.db.Preload("Service").Where("user_id = ?", userId).Find(&bookings).Error; err != nil {
+	query := h.db.Preload("Service").Where("user_id = ?", userId)
+
+	if status != "" {
+		if !isAllowedBookingStatus(status) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid status. Supported statuses: pending, approved, rejected, completed, cancelled",
+			})
+			return
+		}
+
+		query = query.Where("status = ?", status)
+	}
+
+	if err := query.Find(&bookings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookings"})
 		return
 	}
 
 	c.JSON(http.StatusOK, bookings)
+}
+
+func normalizeBookingStatus(status string) string {
+	return strings.ToLower(strings.TrimSpace(status))
+}
+
+func isAllowedBookingStatus(status string) bool {
+	_, ok := allowedBookingStatuses[status]
+	return ok
 }
 
 // UpdateBooking updates a booking
@@ -118,19 +134,8 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 // CancelBooking cancels a booking
 func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	id := c.Param("id")
-	var req UpdateBookingStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	result := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", req.Status)
-	if result.Error != nil {
+	if err := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", "cancelled").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel booking"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
 
