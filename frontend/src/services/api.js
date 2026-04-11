@@ -39,6 +39,7 @@ export const serviceAPI = {
   getService: (id) => apiClient.get(`/services/${id}`),
   createService: (serviceData) => apiClient.post('/services', serviceData),
   updateService: (id, serviceData) => apiClient.put(`/services/${id}`, serviceData),
+  updateServiceActive: (id, isActive) => apiClient.patch(`/services/${id}/active`, { isActive }),
   deleteService: (id) => apiClient.delete(`/services/${id}`),
   getServicesByCategory: (category) => apiClient.get(`/services/category/${category}`),
 };
