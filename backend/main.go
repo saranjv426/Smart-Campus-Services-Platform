@@ -7,6 +7,7 @@ import (
 
 	"smart-campus-services/handlers"
 	"smart-campus-services/models"
+	"smart-campus-services/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -18,6 +19,11 @@ func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
+	}
+
+	// Register custom request validators before handling any requests.
+	if err := validation.Init(); err != nil {
+		log.Fatalf("Failed to initialize validators: %v", err)
 	}
 
 	// Initialize database
