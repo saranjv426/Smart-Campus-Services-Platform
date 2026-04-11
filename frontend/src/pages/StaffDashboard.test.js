@@ -1,9 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import axios from 'axios';
 import StaffDashboard from './StaffDashboard';
+import { approvalAPI } from '../services/approvalApi';
 
-jest.mock('axios');
+jest.mock('../services/approvalApi', () => ({
+  approvalAPI: {
+    getPendingBookingsByStaff: jest.fn(),
+    approveBooking: jest.fn(),
+    rejectBooking: jest.fn(),
+  },
+}));
 
 const mockNavigate = jest.fn();
 
@@ -74,7 +81,9 @@ describe('StaffDashboard Page Component', () => {
     localStorage.setItem('token', 'mock-token');
     localStorage.setItem('user', JSON.stringify(mockStaff));
 
-    axios.get.mockResolvedValue({ data: mockBookings });
+    approvalAPI.getPendingBookingsByStaff.mockResolvedValue(mockBookings);
+    approvalAPI.approveBooking.mockResolvedValue({ data: { success: true } });
+    approvalAPI.rejectBooking.mockResolvedValue({ data: { success: true } });
   });
 
   test('redirects to login if no token', async () => {
@@ -109,95 +118,172 @@ describe('StaffDashboard Page Component', () => {
     });
   });
 
-  test('displays loading state initially', () => {
-    renderStaffDashboard();
-
-    expect(screen.getByText(/Loading pending bookings.../i)).toBeInTheDocument();
-  });
-
   test('fetches pending bookings on mount', async () => {
     renderStaffDashboard();
 
     await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith(
-        'http://localhost:8080/api/approval/staff/1/pending',
-        {
-          headers: {
-            Authorization: 'Bearer mock-token',
-          },
-        }
-      );
+      expect(approvalAPI.getPendingBookingsByStaff).toHaveBeenCalledWith(1);
     });
   });
 
-  test('displays pending bookings after loading', async () => {
+  test('shows approve and reject buttons for each booking', async () => {
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+      expect(screen.getAllByRole('button', { name: 'Reject' })).toHaveLength(2);
+    });
+  });
+
+  test('opens approve modal when approve button is clicked', async () => {
+    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
-      expect(screen.getByText('Study Room')).toBeInTheDocument();
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
     });
+
+    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+
+    expect(await screen.findByText('Approve Booking')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/Add any notes about this approval or rejection/i)
+    ).toBeInTheDocument();
   });
 
-  test('shows pending bookings count badge', async () => {
+  test('opens reject modal when reject button is clicked', async () => {
+    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('2')).toBeInTheDocument();
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
+
+    await user.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
+
+    expect(await screen.findByText('Reject Booking')).toBeInTheDocument();
   });
 
-  test('displays booking detail fields in cards', async () => {
+  test('allows user to type notes in modal', async () => {
+    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
-      expect(screen.getAllByText('Student Name:').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Email:').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Phone:').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Start Time:').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('End Time:').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Reason:').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Requested:').length).toBeGreaterThan(0);
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+
+    const textarea = await screen.findByPlaceholderText(
+      /Add any notes about this approval or rejection/i
+    );
+
+    await user.type(textarea, 'Approved by staff');
+
+    expect(textarea).toHaveValue('Approved by staff');
+  });
+
+  test('submits approval action successfully', async () => {
+    const user = userEvent.setup();
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+
+    const textarea = await screen.findByPlaceholderText(
+      /Add any notes about this approval or rejection/i
+    );
+    await user.type(textarea, 'Looks good');
+
+    await user.click(screen.getByRole('button', { name: 'Approve Booking' }));
+
+    await waitFor(() => {
+      expect(approvalAPI.approveBooking).toHaveBeenCalledWith(1, {
+        status: 'approved',
+        approvalNotes: 'Looks good',
+        staffId: 1,
+      });
+    });
+
+    await waitFor(() => {
+      expect(approvalAPI.getPendingBookingsByStaff).toHaveBeenCalledTimes(2);
     });
   });
 
-  test('displays error message on fetch failure', async () => {
-    axios.get.mockRejectedValueOnce({
+  test('submits rejection action successfully', async () => {
+    const user = userEvent.setup();
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
+
+    const textarea = await screen.findByPlaceholderText(
+      /Add any notes about this approval or rejection/i
+    );
+    await user.type(textarea, 'Conflicting schedule');
+
+    await user.click(screen.getByRole('button', { name: 'Reject Booking' }));
+
+    await waitFor(() => {
+      expect(approvalAPI.rejectBooking).toHaveBeenCalledWith(1, {
+        status: 'rejected',
+        approvalNotes: 'Conflicting schedule',
+        staffId: 1,
+      });
+    });
+  });
+
+  test('closes modal when cancel button is clicked', async () => {
+    const user = userEvent.setup();
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+
+    expect(await screen.findByText('Approve Booking')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Approve Booking')).not.toBeInTheDocument();
+    });
+  });
+
+  test('closes modal when overlay is clicked', async () => {
+    const user = userEvent.setup();
+    renderStaffDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+
+    expect(await screen.findByText('Approve Booking')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('booking-action-modal-overlay'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Approve Booking')).not.toBeInTheDocument();
+    });
+  });
+
+  test('shows error message if approval submission fails', async () => {
+    const user = userEvent.setup();
+    approvalAPI.approveBooking.mockRejectedValueOnce({
       response: {
         data: {
-          error: 'Failed to load pending bookings',
+          error: 'Failed to approve booking',
         },
-      },
-    });
-
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Failed to load pending bookings')
-      ).toBeInTheDocument();
-    });
-  });
-
-  test('displays empty state when there are no pending bookings', async () => {
-    axios.get.mockResolvedValueOnce({ data: [] });
-
-    renderStaffDashboard();
-
-    await waitFor(() => {
-      expect(screen.getByText('No pending bookings')).toBeInTheDocument();
-      expect(
-        screen.getByText('There are currently no bookings awaiting review.')
-      ).toBeInTheDocument();
-    });
-  });
-
-  test('handles API response wrapped in data property', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
-        data: mockBookings,
       },
     });
 
@@ -205,28 +291,37 @@ describe('StaffDashboard Page Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
-      expect(screen.getByText('Study Room')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+    await user.click(screen.getByRole('button', { name: 'Approve Booking' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to approve booking')).toBeInTheDocument();
     });
   });
 
-  test('falls back gracefully when booking fields are missing', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: [
-        {
-          id: 99,
-          startTime: null,
-          endTime: null,
-          createdAt: null,
-          notes: '',
+  test('shows error message if rejection submission fails', async () => {
+    const user = userEvent.setup();
+    approvalAPI.rejectBooking.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'Failed to reject booking',
         },
-      ],
+      },
     });
 
     renderStaffDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText('Service Not Available')).toBeInTheDocument();
-      expect(screen.getAllByText('N/A').length).toBeGreaterThan(0);
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
+    await user.click(screen.getByRole('button', { name: 'Reject Booking' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to reject booking')).toBeInTheDocument();
     });
   });
 });

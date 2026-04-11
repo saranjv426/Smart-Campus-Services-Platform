@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import BookingActionModal from '../components/BookingActionModal';
+import { approvalAPI } from '../services/approvalApi';
 import '../styles/StaffDashboard.css';
 
 const StaffDashboard = () => {
@@ -9,6 +10,12 @@ const StaffDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [staffInfo, setStaffInfo] = useState(null);
+
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [actionType, setActionType] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -28,7 +35,7 @@ const StaffDashboard = () => {
       }
 
       setStaffInfo(userData);
-      fetchPendingBookings(userData.id, token);
+      fetchPendingBookings(userData.id);
     } catch (err) {
       console.error('Failed to parse stored user data:', err);
       localStorage.removeItem('token');
@@ -37,23 +44,10 @@ const StaffDashboard = () => {
     }
   }, [navigate]);
 
-  const fetchPendingBookings = async (staffId, token) => {
+  const fetchPendingBookings = async (staffId) => {
     try {
       setLoading(true);
-
-      const response = await axios.get(
-        `http://localhost:8080/api/approval/staff/${staffId}/pending`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const bookingsData = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-
+      const bookingsData = await approvalAPI.getPendingBookingsByStaff(staffId);
       setBookings(bookingsData);
       setError('');
     } catch (err) {
@@ -105,6 +99,53 @@ const StaffDashboard = () => {
 
   const getStudentPhone = (booking) => {
     return booking.user?.phone || booking.phone || 'N/A';
+  };
+
+  const openActionModal = (booking, type) => {
+    setSelectedBooking(booking);
+    setActionType(type);
+    setNotes('');
+    setShowModal(true);
+    setError('');
+  };
+
+  const closeModal = () => {
+    if (submitting) return;
+    setShowModal(false);
+    setSelectedBooking(null);
+    setNotes('');
+    setActionType('');
+  };
+
+  const submitAction = async () => {
+    if (!selectedBooking || !staffInfo) return;
+
+    try {
+      setSubmitting(true);
+      setError('');
+
+      const payload = {
+        status: actionType === 'approve' ? 'approved' : 'rejected',
+        approvalNotes: notes,
+        staffId: staffInfo.id,
+      };
+
+      if (actionType === 'approve') {
+        await approvalAPI.approveBooking(selectedBooking.id, payload);
+      } else {
+        await approvalAPI.rejectBooking(selectedBooking.id, payload);
+      }
+
+      closeModal();
+      await fetchPendingBookings(staffInfo.id);
+    } catch (err) {
+      console.error(`Failed to ${actionType} booking:`, err);
+      const errorMsg =
+        err.response?.data?.error || `Failed to ${actionType} booking`;
+      setError(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -182,11 +223,40 @@ const StaffDashboard = () => {
                     <span className="value">{formatDate(booking.createdAt)}</span>
                   </div>
                 </div>
+
+                <div className="booking-actions">
+                  <button
+                    className="btn-reject"
+                    onClick={() => openActionModal(booking, 'reject')}
+                  >
+                    Reject
+                  </button>
+
+                  <button
+                    className="btn-approve"
+                    onClick={() => openActionModal(booking, 'approve')}
+                  >
+                    Approve
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <BookingActionModal
+        show={showModal}
+        actionType={actionType}
+        selectedBooking={selectedBooking}
+        notes={notes}
+        onNotesChange={setNotes}
+        onClose={closeModal}
+        onSubmit={submitAction}
+        submitting={submitting}
+        getServiceName={getServiceName}
+        getStudentName={getStudentName}
+      />
     </div>
   );
 };
