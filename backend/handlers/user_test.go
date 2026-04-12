@@ -33,6 +33,34 @@ func TestGetUserReturnsUser(t *testing.T) {
 	}
 }
 
+func TestGetAllUsersReturnsUsers(t *testing.T) {
+	db := setupTestDB(t)
+	firstUser := createUserFixture(t, db, func(user *models.User) {
+		user.Email = "first@example.com"
+	})
+	secondUser := createUserFixture(t, db, func(user *models.User) {
+		user.Email = "second@example.com"
+	})
+
+	handler := NewUserHandler(db)
+	router := gin.New()
+	router.GET("/users", handler.GetAllUsers)
+
+	rec := performRequest(t, router, http.MethodGet, "/users", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	users := decodeJSON[[]models.User](t, rec)
+	if len(users) != 2 {
+		t.Fatalf("expected 2 users, got %d", len(users))
+	}
+	if users[0].ID != secondUser.ID || users[1].ID != firstUser.ID {
+		t.Fatalf("expected most recent users first, got %+v", users)
+	}
+}
+
 func TestGetUserReturnsNotFoundForMissingUser(t *testing.T) {
 	db := setupTestDB(t)
 

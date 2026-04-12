@@ -18,6 +18,7 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	userHandlers := handlers.NewUserHandler(db)
 	approvalHandlers := handlers.NewApprovalHandler(db)
 	authRequired := middleware.AuthRequired()
+	adminOnly := middleware.RequireRoles("admin")
 
 	auth := r.Group("/api/auth")
 	{
@@ -40,6 +41,11 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	usersProtected.Use(authRequired)
 	{
 		usersProtected.PUT("/:id", userHandlers.UpdateUser)
+	}
+	adminUsers := r.Group("/api/users")
+	adminUsers.Use(authRequired, adminOnly)
+	{
+		adminUsers.GET("", userHandlers.GetAllUsers)
 	}
 
 	services := r.Group("/api/services")
