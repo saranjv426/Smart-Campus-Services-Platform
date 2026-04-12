@@ -155,7 +155,8 @@ func TestRefreshTokenReturnsStructuredToken(t *testing.T) {
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
 	user := createUserFixture(t, db, func(user *models.User) {
-		user.Role = "admin"
+		user.Role = "staff"
+		user.ServiceID = "service-123"
 	})
 
 	router := gin.New()

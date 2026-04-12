@@ -13,7 +13,7 @@ type TokenClaims struct {
 	ServiceID string
 }
 
-// ParseTokenClaims extracts lightweight claims from the demo auth token.
+// ParseTokenClaims extracts lightweight user claims from the demo auth token.
 func ParseTokenClaims(token string) (TokenClaims, bool) {
 	parts := strings.Split(token, "|")
 	if len(parts) != 3 {

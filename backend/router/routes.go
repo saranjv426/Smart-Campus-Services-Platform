@@ -19,6 +19,7 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	approvalHandlers := handlers.NewApprovalHandler(db)
 	authRequired := middleware.AuthRequired()
 	adminOnly := middleware.RequireRoles("admin")
+	staffOnly := middleware.RequireRoles("staff")
 
 	auth := r.Group("/api/auth")
 	{
@@ -79,14 +80,23 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	approval := r.Group("/api/approval")
 	approval.Use(authRequired)
 	{
-		approval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
-		approval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
-		approval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
-		approval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
-		approval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
-		approval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
-		approval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
-		approval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		staffApproval := approval.Group("")
+		staffApproval.Use(staffOnly)
+		{
+			staffApproval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
+			staffApproval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
+			staffApproval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
+			staffApproval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
+		}
+
+		adminApproval := approval.Group("")
+		adminApproval.Use(adminOnly)
+		{
+			adminApproval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
+			adminApproval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
+			adminApproval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
+			adminApproval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		}
 	}
 
 	notifications := r.Group("/api/notifications")
