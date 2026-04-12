@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"smart-campus-services/middleware"
 	"smart-campus-services/models"
 	"smart-campus-services/validation"
 )
@@ -146,20 +147,38 @@ func TestLogoutReturnsSuccess(t *testing.T) {
 	}
 }
 
-func TestRefreshTokenReturnsPlaceholderToken(t *testing.T) {
+func TestRefreshTokenReturnsStructuredToken(t *testing.T) {
 	if err := validation.Init(); err != nil {
 		t.Fatalf("failed to initialize validator: %v", err)
 	}
 
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
+	user := createUserFixture(t, db, func(user *models.User) {
+		user.Role = "admin"
+	})
 
 	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", user.ID)
+		c.Set("role", user.Role)
+		c.Set("serviceID", user.ServiceID)
+		c.Next()
+	})
 	router.POST("/refresh", handler.RefreshToken)
 
 	rec := performRequest(t, router, http.MethodPost, "/refresh", nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	body := decodeJSON[map[string]string](t, rec)
+	claims, ok := middleware.ParseTokenClaims(body["token"])
+	if !ok {
+		t.Fatalf("expected refresh token to be parseable, got %q", body["token"])
+	}
+	if claims.UserID != user.ID || claims.Role != user.Role || claims.ServiceID != user.ServiceID {
+		t.Fatalf("unexpected refresh token claims: %+v", claims)
 	}
 }
