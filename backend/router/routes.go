@@ -43,6 +43,11 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		usersProtected.PUT("/:id", userHandlers.UpdateUser)
 	}
+	adminUsers := r.Group("/api/users")
+	adminUsers.Use(authRequired, adminOnly)
+	{
+		adminUsers.GET("", userHandlers.GetAllUsers)
+	}
 
 	services := r.Group("/api/services")
 	{

@@ -94,6 +94,17 @@ func main() {
 		users.GET("/:id", userHandlers.GetUser)
 		users.PUT("/:id", userHandlers.UpdateUser)
 		users.GET("/:id/profile", userHandlers.GetProfile)
+		users.GET("", func(c *gin.Context) {
+			middleware.AuthRequired()(c)
+			if c.IsAborted() {
+				return
+			}
+			middleware.RequireRoles("admin")(c)
+			if c.IsAborted() {
+				return
+			}
+			userHandlers.GetAllUsers(c)
+		})
 	}
 
 	// Service routes
