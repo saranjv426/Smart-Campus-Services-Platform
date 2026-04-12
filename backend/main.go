@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"smart-campus-services/handlers"
+	"smart-campus-services/middleware"
 	"smart-campus-services/models"
 	"smart-campus-services/validation"
 
@@ -74,6 +75,9 @@ func main() {
 	reviewHandlers := handlers.NewReviewHandler(db)
 	userHandlers := handlers.NewUserHandler(db)
 	approvalHandlers := handlers.NewApprovalHandler(db)
+	authRequired := middleware.AuthRequired()
+	adminOnly := middleware.RequireRoles("admin")
+	staffOnly := middleware.RequireRoles("staff")
 
 	// Auth routes
 	auth := router.Group("/api/auth")
@@ -115,16 +119,25 @@ func main() {
 
 	// Approval routes (staff only)
 	approval := router.Group("/api/approval")
+	approval.Use(authRequired)
 	{
-		approval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
-		approval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
-		approval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
-		approval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
-		// Admin approval routes
-		approval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
-		approval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
-		approval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
-		approval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		staffApproval := approval.Group("")
+		staffApproval.Use(staffOnly)
+		{
+			staffApproval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
+			staffApproval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
+			staffApproval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
+			staffApproval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
+		}
+
+		adminApproval := approval.Group("")
+		adminApproval.Use(adminOnly)
+		{
+			adminApproval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
+			adminApproval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
+			adminApproval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
+			adminApproval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		}
 	}
 
 	// Notification routes
