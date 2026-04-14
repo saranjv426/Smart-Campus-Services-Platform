@@ -1,816 +1,681 @@
 # Sprint 3 Report - Smart Campus Services Platform
 
-## Team Members:
-- Venkata Sai Saran Jonnalagadda - 11114995 
-- Srikar Panuganti - 38909216 
-- Keerthi Reddy Gudibandi - 13652831 
+A comprehensive Sprint 3 summary for the Smart Campus Services Platform covering completed work, frontend and backend unit tests, and the updated backend API delivered during this sprint.
+
+**Status**: ✅ **Sprint 3 Complete** | **Last Updated**: April 13, 2026 | **Sprint Focus**: Admin Dashboard, Booking Management, Service Management, and Backend Authorization Improvements
+
+---
+
+## 🎯 Sprint 3 Overview
+
+### Team Members
+- Venkata Sai Saran Jonnalagadda - 11114995
+- Srikar Panuganti - 38909216
+- Keerthi Reddy Gudibandi - 13652831
 - Vishnu Sai Padyala - 32712860
 
----
+### Sprint Goal
+- Build a complete administrator workflow for monitoring bookings, approving and rejecting requests, managing services, and strengthening backend protection and test coverage for the new admin flows.
 
-## Sprint 3 Overview
+### Sprint 3 Completion Summary
 
-**Sprint Duration**: Week 11-13  
-**Status**: ✅ COMPLETE  
-**Sprint Goal**: Implement comprehensive admin dashboard with service and booking management capabilities  
-
-### All Sprint 3 Issues - COMPLETED
-
-| Issue | Type | Status |
-|-------|------|--------|
-| #62: Admin Dashboard Page - All Bookings Overview | Frontend Feature | ✅ DONE |
-| #63: Admin Approve & Reject Any Booking | Frontend Feature | ✅ DONE |
-| #64: Admin Service Create & Delete UI | Frontend Feature | ✅ DONE |
-
----
-
-## 📋 Work Completed in Sprint 3
-
-### 1. Issue #62: Admin Dashboard Page – All Bookings Overview ✅
-
-**Feature Description:**
-- Comprehensive admin dashboard displaying all student bookings across all services
-- Real-time statistics and filtering capabilities
-- Professional table interface with responsive design
-
-**Implementation Details:**
-
-**Files Modified:**
-- `frontend/src/pages/AdminDashboard.js` - Complete component rewrite
-- `frontend/src/styles/AdminDashboard.css` - Added 150+ lines of styling
-
-**Key Functions Implemented:**
-- `fetchAllBookings(adminId)` - Fetches all bookings from backend via GET `/api/approval/admin/{userId}/all`
-- `fetchServices()` - Loads available services for filtering
-- `filterServices()` - Applies status and service category filters
-- `applyFilters()` - Combines multiple filter criteria
-- `calculateStatistics()` - Computes booking counts by status
-
-**UI Components:**
-1. **Header Section**
-   - Welcome message with admin name
-   - Logout button with navigation
-
-2. **Tab Navigation** (NEW!)
-   - 📋 Bookings Overview (default tab)
-   - 🏢 Manage Services (service management)
-
-3. **Statistics Cards**
-   - Total Bookings count
-   - Pending Bookings count
-   - Approved Bookings count
-   - Rejected Bookings count
-
-4. **Filter Section**
-   - Status filter buttons: Pending, Approved, Rejected, All
-   - Service category dropdown: All, Library, Dining, Transportation, Healthcare
-   - Multiple filter support (combine status + category)
-
-5. **Bookings Table** (8 columns)
-   - Service Name
-   - Student Name
-   - Student Email
-   - Start Time (formatted date/time)
-   - End Time (formatted date/time)
-   - Status (color-coded: Yellow=Pending, Green=Approved, Red=Rejected)
-   - Created Date
-   - Actions (Approve/Reject buttons for pending bookings)
-
-**Features:**
-- ✅ Real-time data loading with loading states
-- ✅ Color-coded status indicators
-- ✅ Responsive table for mobile/tablet/desktop
-- ✅ Statistics auto-update after admin actions
-- ✅ Empty state handling
-- ✅ Error handling with user-friendly messages
-
-**Backend Integration:**
-- Endpoint: `GET /api/approval/admin/{userId}/all`
-- Authorization: Bearer token required
-- Response: Array of booking objects with all details
+| Area | Outcome | Status |
+|------|---------|--------|
+| Admin dashboard bookings overview | Completed | ✅ |
+| Admin approve/reject workflow | Completed | ✅ |
+| Admin create/delete service UI | Completed | ✅ |
+| Backend role protection on approval routes | Completed | ✅ |
+| Backend admin get-all-users endpoint | Completed | ✅ |
+| Booking approval/rejection notification verification | Completed | ✅ |
+| Expanded frontend and backend automated tests | Completed | ✅ |
+| Updated backend API documentation | Completed | ✅ |
 
 ---
 
-### 2. Issue #63: Admin Approve & Reject Any Booking ✅
+## 📋 Work Completed In Sprint 3
 
-**Feature Description:**
-- Approve or reject any student booking from the admin dashboard
-- Optional notes for approval/rejection decision
-- Real-time status updates and notifications
+## 1. Admin Dashboard - View All Bookings
 
-**Implementation Details:**
+### Description
+Implemented a comprehensive admin dashboard that displays all bookings across the platform in one place. The dashboard supports monitoring, filtering, and acting on bookings in real time.
 
-**Files Modified:**
-- `frontend/src/pages/AdminDashboard.js` - Added approval/rejection logic
-- `frontend/src/styles/AdminDashboard.css` - Added modal and button styling
+### Completed Work
+- Added a bookings overview tab for administrators.
+- Displayed all bookings with booking metadata and status indicators.
+- Added summary statistics cards for:
+  - total bookings
+  - pending bookings
+  - approved bookings
+  - rejected bookings
+- Added frontend filters for:
+  - booking status
+  - service category
+- Integrated dashboard with backend approval endpoints for fetching all bookings.
+- Supported responsive layouts for desktop, tablet, and mobile views.
 
-**Key Functions Implemented:**
-- `handleApprove(booking)` - Opens approval modal with booking details
-- `handleReject(booking)` - Opens rejection modal
-- `submitAction()` - Submits approval/rejection with optional notes
-- Real-time table refresh after action completion
+### Key Frontend Files
+- `frontend/src/pages/AdminDashboard.js`
+- `frontend/src/styles/AdminDashboard.css`
 
-**UI Components:**
-1. **Approval Modal**
-   - Booking details display
-   - Optional notes input field
-   - Placeholder: "Add notes for approval..."
-   - Confirm/Cancel buttons
-
-2. **Rejection Modal**
-   - Booking details display
-   - Optional reason input field
-   - Placeholder: "Add reason for rejection..."
-   - Confirm/Cancel buttons
-
-3. **Action Buttons**
-   - Green "Approve" button for pending bookings
-   - Red "Reject" button for pending bookings
-   - Disabled for non-pending bookings
-
-**Features:**
-- ✅ Confirm actions before submission
-- ✅ Optional notes/reasons for audit trail
-- ✅ Real-time status change (Pending → Approved/Rejected)
-- ✅ Automatic bookings list refresh
-- ✅ Student notifications sent (backend handled)
-- ✅ Error handling and validation
-- ✅ Prevents duplicate submissions
-
-**Backend Integration:**
-- Approve Endpoint: `PUT /api/approval/admin/{userId}/bookings/{id}/approve`
-  - Request: `{ notes?: string }`
-  - Response: `{ success: true, booking: {...} }`
-
-- Reject Endpoint: `PUT /api/approval/admin/{userId}/bookings/{id}/reject`
-  - Request: `{ reason?: string }`
-  - Response: `{ success: true, booking: {...} }`
-
-- Authorization: Bearer token required
+### Backend Integration
+- `GET /api/approval/admin/:userId/all`
+- `GET /api/approval/admin/:userId/pending`
 
 ---
 
-### 3. Issue #64: Admin Service Create & Delete UI ✅
+## 2. Admin Approve Booking
 
-**Feature Description:**
-- Manage all campus services from admin dashboard
-- Create new services with comprehensive details
-- Delete services with confirmation
-- Service grid display with responsive design
+### Description
+Implemented admin approval functionality for pending bookings so administrators can confirm valid booking requests directly from the dashboard.
 
-**Implementation Details:**
+### Completed Work
+- Added approve action buttons for pending bookings.
+- Added approval modal with booking details.
+- Allowed optional approval notes for auditability.
+- Updated frontend state after approval without requiring a full page reload.
+- Persisted approval status in the backend.
+- Generated student notifications when bookings are approved.
 
-**Files Modified:**
-- `frontend/src/pages/AdminDashboard.js` - Added service management tab and logic
-- `frontend/src/styles/AdminDashboard.css` - Added 150+ lines for service management
+### Key Frontend Files
+- `frontend/src/pages/AdminDashboard.js`
+- `frontend/src/styles/AdminDashboard.css`
 
-**Key Functions Implemented:**
-- `handleCreateServiceClick()` - Opens create service form modal
-- `handleDeleteServiceClick(serviceId)` - Opens delete confirmation modal
-- `handleServiceFormChange(e)` - Manages form input state
-- `submitServiceAction()` - Submits create/delete actions
-- `fetchServices()` - Loads all services for display
+### Key Backend Files
+- `backend/handlers/approval.go`
+- `backend/router/routes.go`
+- `backend/middleware/auth.go`
 
-**State Management:**
-- `showServiceModal` - Toggle modal visibility
-- `serviceModalType` - 'create' or 'delete' mode
-- `selectedService` - Current service being edited/deleted
-- `serviceForm` - Form input state with fields:
-  - name (required)
-  - description (required)
-  - category (required)
-  - location (required)
-  - phone (optional)
-  - email (optional)
-  - hours (optional)
-  - imageUrl (optional)
-- `serviceError` - Error message display
-- `serviceLoading` - Loading state
-
-**UI Components:**
-1. **🏢 Manage Services Tab**
-   - Accessed via tab navigation
-
-2. **Create Service Button**
-   - Button: "+ Add New Service"
-   - Opens modal on click
-
-3. **Service Grid** (Responsive)
-   - Grid layout with min-width columns
-   - Responsive: 1-4 columns based on screen width
-   - Breakpoints: 1200px, 768px, 480px
-
-4. **Service Card** (for each service)
-   - Service image (if available)
-   - Service name
-   - Category badge
-   - Location info
-   - Delete button
-   - Hover effects
-
-5. **Create Service Modal**
-   - Form fields:
-     - Service Name input (required)
-     - Description textarea (required)
-     - Category dropdown (required)
-     - Location input (required)
-     - Phone input (optional)
-     - Email input (optional)
-     - Hours input (optional)
-     - Image URL input (optional)
-   - Submit and Cancel buttons
-   - Form validation with error messages
-
-6. **Delete Confirmation Modal**
-   - Display service name to delete
-   - Warning message with confirmation
-   - Confirm and Cancel buttons
-   - Prevents accidental deletion
-
-**Features:**
-- ✅ Create services with validation
-- ✅ All form fields properly labeled
-- ✅ Delete services with confirmation
-- ✅ Real-time grid updates after create/delete
-- ✅ Error handling with user messages
-- ✅ Loading states during operations
-- ✅ Responsive grid layout
-- ✅ Service images display (if available)
-- ✅ Category classification
-
-**Backend Integration:**
-- Create Endpoint: `POST /api/services`
-  - Request: `{ name, description, category, location, phone?, email?, hours?, imageUrl? }`
-  - Response: `{ id, name, ...service }`
-
-- Delete Endpoint: `DELETE /api/services/{id}`
-  - Response: `{ success: true }`
-
-- List Endpoint: `GET /api/services`
-  - Response: Array of service objects
-
-- Authorization: Bearer token required
+### Backend Integration
+- `PUT /api/approval/admin/:userId/bookings/:id/approve`
 
 ---
 
-## 📁 Frontend Files Changed
+## 3. Admin Reject Booking
 
-### AdminDashboard Component Updates
-**File**: `frontend/src/pages/AdminDashboard.js`
+### Description
+Implemented admin rejection functionality for pending bookings so administrators can reject conflicting or invalid requests with recorded reasoning.
 
-**Changes Summary:**
-- Lines: ~550 (complete rewrite from ~250)
-- Added 10+ new state variables for service management
-- Added 4 new major functions for service operations
-- Implemented tabbed interface
-- Enhanced filtering logic
-- Integrated approval endpoints
+### Completed Work
+- Added reject action buttons for pending bookings.
+- Added rejection modal requiring or encouraging a reason.
+- Updated booking status to `Rejected`.
+- Removed rejected items from the pending view and preserved them in booking history.
+- Created student-facing rejection notifications.
+- Stored rejection reason in approval notes for auditability.
 
-**Code Statistics:**
-```
-Lines Added: 300+
-Lines Modified: 250
-Functions Added: 8
-  - fetchServices()
-  - handleCreateServiceClick()
-  - handleDeleteServiceClick()
-  - handleServiceFormChange()
-  - submitServiceAction()
-  - filterServices()
-  - applyFilters()
-  - calculateStatistics()
-State Variables: 15+
-  - activeTab
-  - showServiceModal
-  - serviceModalType
-  - selectedService
-  - serviceForm
-  - serviceError
-  - serviceLoading
-  - filterStatus
-  - filterService
-  - + booking-related states
-```
+### Key Frontend Files
+- `frontend/src/pages/AdminDashboard.js`
+- `frontend/src/styles/AdminDashboard.css`
 
-### Styling Enhancements
-**File**: `frontend/src/styles/AdminDashboard.css`
+### Key Backend Files
+- `backend/handlers/approval.go`
+- `backend/router/routes.go`
 
-**Changes Summary:**
-- Lines Added: 150+
-- New CSS Classes:
-  - `.tab-navigation` - Tab container styling
-  - `.tab-btn` - Individual tab button styling
-  - `.tab-btn.active` - Active tab indicator
-  - `.services-grid` - Responsive grid container
-  - `.service-card` - Service item card
-  - `.service-image` - Service image styling
-  - `.service-content` - Card content area
-  - `.service-modal` - Modal dialog styling
-  - `.form-row` - Form row layout (2 columns)
-  - `.form-group` - Form field grouping
-  - `.btn-create-service` - Create button styling
-  - `.btn-delete-service` - Delete button styling
-  - `.delete-confirmation` - Confirmation dialog styling
-  - `.warning-text` - Warning message styling
+### Backend Integration
+- `PUT /api/approval/admin/:userId/bookings/:id/reject`
 
-**Features:**
-- Responsive breakpoints: 1200px, 768px, 480px
-- Grid columns: minmax(300px, 1fr) responsive
-- Color scheme: CSS variables from index.css
-- Gradient backgrounds: Purple theme (#667eea → #764ba2)
-- Hover effects and transitions
-- Mobile-first design approach
+---
+
+## 4. Create New Service
+
+### Description
+Built an administrator workflow for creating new services directly from the admin dashboard through a dedicated modal form.
+
+### Completed Work
+- Added a service management tab in the admin dashboard.
+- Added a create-service form modal with fields for:
+  - service name
+  - category
+  - description
+  - location
+  - phone
+  - email
+  - hours
+  - image URL
+- Added validation for required fields.
+- Set newly created services to active by default.
+- Displayed newly created services immediately in the service list.
+- Added success and error handling for submission.
+
+### Key Frontend Files
+- `frontend/src/pages/AdminDashboard.js`
+- `frontend/src/styles/AdminDashboard.css`
+
+### Backend Integration
+- `POST /api/services`
+- `GET /api/services`
+
+---
+
+## 5. Delete Service
+
+### Description
+Implemented an administrator workflow for deleting outdated or unavailable services from the system using a confirmation modal.
+
+### Completed Work
+- Added delete buttons on service cards.
+- Added a confirmation modal before deletion.
+- Displayed the selected service name inside the confirmation dialog.
+- Removed deleted services from the UI immediately after success.
+- Added success and failure messaging.
+- Preserved a clear admin workflow for canceling the delete action.
+
+### Key Frontend Files
+- `frontend/src/pages/AdminDashboard.js`
+- `frontend/src/styles/AdminDashboard.css`
+
+### Backend Integration
+- `DELETE /api/services/:id`
+
+---
+
+## 6. Backend Improvement - Role-Based Protection On Approval Routes
+
+### Description
+Strengthened backend authorization by applying `RequireRoles(...)` middleware to approval routes. Before this update, approval endpoints were authenticated but not consistently restricted by user role.
+
+### Completed Work
+- Restricted staff approval endpoints to `staff` users only.
+- Restricted admin approval endpoints to `admin` users only.
+- Updated lightweight token parsing so auth middleware places role information into request context.
+- Added router tests confirming:
+  - missing token returns `401`
+  - wrong role returns `403`
+  - correct role is allowed
+
+### Key Backend Files
+- `backend/middleware/auth.go`
+- `backend/router/routes.go`
+- `backend/main.go`
+- `backend/router/routes_test.go`
+
+### Result
+- Staff users can only access staff approval routes.
+- Admin users can only access admin approval routes.
+
+---
+
+## 7. Backend Improvement - Admin Get All Users Endpoint
+
+### Description
+Added a protected backend endpoint for retrieving all users, intended for administrator management features.
+
+### Completed Work
+- Added `GET /api/users` to return all users.
+- Protected the endpoint with authentication and `RequireRoles("admin")`.
+- Added tests for:
+  - admin success
+  - non-admin forbidden
+  - auth-required behavior
+
+### Key Backend Files
+- `backend/handlers/user.go`
+- `backend/router/routes.go`
+- `backend/main.go`
+- `backend/handlers/user_test.go`
+- `backend/router/routes_test.go`
+
+### Result
+- Only admins can fetch the full user list.
+
+---
+
+## 8. Backend Improvement - Notification On Booking Approval And Rejection
+
+### Description
+Verified and strengthened notification behavior for approval and rejection workflows so students consistently receive notifications for booking status changes.
+
+### Completed Work
+- Verified notification creation for staff approval flow.
+- Added explicit backend coverage for:
+  - staff approve notification
+  - staff reject notification
+  - admin approve notification
+  - admin reject notification
+- Consolidated notification creation logic in approval handlers for consistency.
+
+### Key Backend Files
+- `backend/handlers/approval.go`
+- `backend/handlers/approval_test.go`
+
+### Result
+- Booking approval and rejection flows now have stronger regression protection.
+
+---
+
+## 9. Backend Improvement - Service Activation Toggle
+
+### Description
+Added support for toggling a service’s active state with a focused endpoint rather than requiring a full service update payload.
+
+### Completed Work
+- Added `PATCH /api/services/:id/active`.
+- Supported updating only the `isActive` field.
+- Preserved all other service fields.
+- Added tests covering:
+  - activating a service
+  - deactivating a service
+  - invalid payload
+  - missing service
+
+### Key Backend Files
+- `backend/handlers/service.go`
+- `backend/handlers/service_test.go`
+- `backend/router/routes.go`
+
+---
+
+## 10. Backend Improvement - Booking Status Filter
+
+### Description
+Moved booking status filtering into the backend so clients can request only the booking statuses they need.
+
+### Completed Work
+- Added optional `status` query parameter support to `GET /api/bookings/user/:userId`.
+- Allowed valid statuses:
+  - pending
+  - approved
+  - rejected
+  - completed
+  - cancelled
+- Returned `400 Bad Request` for invalid status values.
+- Preserved service preloading on returned bookings.
+- Added tests for:
+  - no filter
+  - valid filter
+  - invalid filter
+  - no matching records
+
+### Key Backend Files
+- `backend/handlers/booking.go`
+- `backend/handlers/booking_test.go`
 
 ---
 
 ## 🧪 Frontend Unit Tests
 
-### File: `frontend/src/pages/AdminDashboard.test.js`
+The following frontend test files are present and cover major UI flows, services, and page-level interactions:
 
-**Total Tests Added**: 30+  
-**Test Categories**:
+### Test Files
+- `frontend/src/App.test.js`
+- `frontend/src/components/Footer.test.js`
+- `frontend/src/components/Navbar.test.js`
+- `frontend/src/pages/AdminDashboard.test.js`
+- `frontend/src/pages/Bookings.test.js`
+- `frontend/src/pages/Home.test.js`
+- `frontend/src/pages/Login.test.js`
+- `frontend/src/pages/Profile.test.js`
+- `frontend/src/pages/ProfileEdit.test.js`
+- `frontend/src/pages/Register.test.js`
+- `frontend/src/pages/ServiceDetail.test.js`
+- `frontend/src/pages/Services.test.js`
+- `frontend/src/pages/StaffDashboard.test.js`
+- `frontend/src/services/api.test.js`
 
-#### 1. Tab Navigation Tests (5 tests)
-- ✅ `test('displays both Bookings and Services tabs')`
-- ✅ `test('switches to Manage Services tab')`
-- ✅ `test('stays on Bookings tab by default')`
-- ✅ `test('toggles between tabs without losing data')`
+### Frontend Test Coverage Highlights
+- App rendering and route behavior
+- Navbar role-based links and logout behavior
+- Login and registration flows
+- Profile display and profile editing
+- Services listing and service detail pages
+- Booking page behavior
+- Staff dashboard access control
+- Admin dashboard workflows
+- API service helpers and interceptor logic
 
-#### 2. Service Management Tests (8 tests)
-- ✅ `test('displays Create Service button')`
-- ✅ `test('opens create service modal')`
-- ✅ `test('creates new service with form submission')`
-- ✅ `test('displays service grid with services')`
-- ✅ `test('displays delete button on service cards')`
-- ✅ `test('opens delete confirmation modal')`
-- ✅ `test('deletes service with confirmation')`
-- ✅ `test('validates required fields in service form')`
-
-#### 3. Booking Filtering Tests (7 tests)
-- ✅ `test('filters bookings by status - Pending')`
-- ✅ `test('filters bookings by status - All')`
-- ✅ `test('filters by service category dropdown')`
-- ✅ `test('applies multiple filters simultaneously')`
-- ✅ `test('displays statistics cards')`
-- ✅ `test('shows correct booking count in statistics')`
-
-#### 4. Admin Approval Tests (4 tests)
-- ✅ `test('submits rejection with optional reason')`
-- ✅ `test('updates booking status after approval')`
-- ✅ `test('displays booking details in approval modal')`
-- ✅ `test('disables actions for non-pending bookings')`
-
-#### 5. Responsiveness Tests (3 tests)
-- ✅ `test('renders properly on mobile devices')`
-- ✅ `test('displays all table columns on desktop')`
-- ✅ `test('service grid is responsive')`
-
-#### Existing Tests (Maintained for backward compatibility)
-- ✅ Redirect on no token
-- ✅ Redirect on non-admin user
-- ✅ Render admin dashboard
-- ✅ Display loading state
-- ✅ Fetch bookings on mount
-- ✅ Fetch services on mount
-- ✅ Display booking list after loading
-- ✅ Display pending bookings count
-- ✅ Display approve button for pending booking
-- ✅ Display reject button for pending booking
-- ✅ Open modal when approve button clicked
-- ✅ Open modal when reject button clicked
-- ✅ Submit approval with notes
-- ✅ Filter bookings by status
-- ✅ Display error message on fetch failure
-- ✅ Refresh bookings after action
-
-**Test Execution:**
-```bash
-cd frontend
-npm test -- --testPathPattern=AdminDashboard
-
-# Run all frontend tests
-npm test
-
-# Run with coverage
-npm test -- --coverage
-```
-
-**Test Coverage:**
-- Component Rendering: 95%+
-- User Interactions: 90%+
-- State Management: 85%+
-- API Integration: 80%+
-- Error Handling: 75%+
+### Sprint 3 Frontend Test Areas Especially Relevant
+- `AdminDashboard.test.js`
+  - dashboard rendering
+  - admin-only behavior
+  - bookings overview interactions
+  - service management interactions
+- `Navbar.test.js`
+  - role-based navigation visibility
+- `api.test.js`
+  - authorization header behavior
 
 ---
 
 ## 🧪 Backend Unit Tests
 
-### Current Backend Tests (Maintained)
+The backend includes handler, middleware, router, model, validation, and utility tests.
 
-**File**: `backend/handlers/booking_test.go`
-- Fixed merge conflict (removed conflict markers in imports)
-- Tests for booking creation, retrieval, updates, and cancellation
+### Backend Test Files
+- `backend/config/config_test.go`
+- `backend/handlers/approval_test.go`
+- `backend/handlers/auth_test.go`
+- `backend/handlers/booking_test.go`
+- `backend/handlers/notification_test.go`
+- `backend/handlers/review_test.go`
+- `backend/handlers/service_test.go`
+- `backend/handlers/test_helpers_test.go`
+- `backend/handlers/user_test.go`
+- `backend/main_test.go`
+- `backend/middleware/middleware_test.go`
+- `backend/middleware/test_helpers_test.go`
+- `backend/models/models_test.go`
+- `backend/router/routes_test.go`
+- `backend/testutil/http_test.go`
+- `backend/testutil/test_db_test.go`
+- `backend/validation/validator_test.go`
 
-**File**: `backend/handlers/approval_test.go`
-- Tests for admin approval functionality
-- Tests for booking approval/rejection endpoints
-- Tests for role-based access control
+### Backend Test Coverage By Area
 
-**File**: `backend/handlers/service_test.go`
-- Tests for service listing, creation, and deletion
-- Tests for service filtering by category
-- Tests for service validation
+#### User Handler Tests
+- `TestGetUserReturnsUser`
+- `TestGetAllUsersReturnsUsers`
+- `TestGetUserReturnsNotFoundForMissingUser`
+- `TestUpdateUserPersistsChanges`
+- `TestUpdateUserReturnsBadRequestForInvalidPayload`
+- `TestGetProfileReturnsBookingsAndReviews`
+- `TestGetProfileReturnsNotFoundForMissingUser`
 
-**File**: `backend/handlers/auth_test.go`
-- Tests for user registration
-- Tests for login and token generation
-- Tests for token refresh and logout
+#### Notification Handler Tests
+- `TestGetNotificationsReturnsUserNotifications`
+- `TestCreateNotificationDefaultsUnread`
+- `TestCreateNotificationReturnsBadRequestForInvalidPayload`
+- `TestMarkAsReadUpdatesNotification`
+- `TestMarkAsReadReturnsNotFoundForMissingNotification`
+- `TestCreateNotificationRejectsMalformedJSON`
 
-**File**: `backend/handlers/user_test.go`
-- Tests for user profile retrieval and updates
-- Tests for user role verification
+#### Booking Handler Tests
+- `TestCreateBookingSetsPendingStatus`
+- `TestGetBookingReturnsBookingWithRelations`
+- `TestGetUserBookingsWithoutStatusFilterReturnsAllUserRecords`
+- `TestGetUserBookingsWithValidStatusFilterReturnsMatchingRecords`
+- `TestGetUserBookingsWithInvalidStatusFilterReturnsBadRequest`
+- `TestGetUserBookingsWithNoMatchingStatusReturnsEmptyArray`
+- `TestUpdateBookingPersistsChanges`
+- `TestCancelBookingMarksStatusCancelled`
 
-**File**: `backend/models/models_test.go`
-- Tests for model validation
-- Tests for timestamp generation
-- Tests for status transitions
+#### Service Handler Tests
+- `TestListServicesReturnsAllServices`
+- `TestGetServiceReturnsNotFoundForMissingService`
+- `TestCreateServicePersistsRecord`
+- `TestUpdateServicePersistsChanges`
+- `TestUpdateServiceActiveActivatesServiceWithoutChangingOtherFields`
+- `TestUpdateServiceActiveDeactivatesServiceAndAffectsActiveOnlyFilter`
+- `TestUpdateServiceActiveReturnsBadRequestForInvalidPayload`
+- `TestUpdateServiceActiveReturnsNotFoundForMissingService`
+- `TestUpdateServiceActiveRejectsMalformedJSON`
+- `TestDeleteServiceRemovesRecord`
+- `TestGetServicesByCategoryFiltersResults`
 
-**Running Backend Tests:**
+#### Approval Handler Tests
+- `TestGetPendingBookingsReturnsStaffServiceBookings`
+- `TestGetAllBookingsForServiceReturnsAllStatuses`
+- `TestApproveBookingUpdatesStatusAndCreatesNotification`
+- `TestRejectBookingCreatesNotification`
+- `TestRejectBookingRequiresMatchingStaffService`
+- `TestGetAllPendingBookingsRequiresAdmin`
+- `TestGetAllBookingsReturnsAdminView`
+- `TestAdminApproveBookingUpdatesStatus`
+- `TestAdminRejectBookingUpdatesStatus`
+
+#### Auth Handler Tests
+- `TestRegisterCreatesUser`
+- `TestRegisterRejectsDuplicateEmail`
+- `TestLoginAuthenticatesUser`
+- `TestLoginRejectsInvalidPassword`
+- `TestLogoutReturnsSuccess`
+- `TestRefreshTokenReturnsStructuredToken`
+
+#### Review Handler Tests
+- `TestCreateReviewPersistsRecordAndUpdatesServiceRating`
+- `TestGetServiceReviewsReturnsReviewsForService`
+- `TestGetReviewReturnsSingleReview`
+- `TestGetUserReviewsReturnsReviewsForUser`
+- `TestDeleteReviewRespectsOwnershipAndUpdatesRating`
+
+#### Middleware And Router Tests
+- `TestAuthRequiredRejectsMissingAuthorizationHeader`
+- `TestAuthRequiredAllowsBearerTokenAndStoresIt`
+- `TestRequireRolesRejectsForbiddenRole`
+- `TestRequireRolesAllowsMatchingRole`
+- `TestCORSSetsHeadersAndShortCircuitsOptions`
+- `TestErrorHandlerWritesInternalServerErrorForUnhandledErrors`
+- `TestRequestLoggerAddsRequestIDHeader`
+- `TestRequestLoggerPreservesIncomingRequestID`
+- `TestProtectedRoutesRequireAuth`
+- `TestPublicRoutesRemainAccessibleWithoutAuth`
+- `TestProtectedRouteAllowsBearerToken`
+- `TestApprovalRoutesRequireMatchingRole`
+- `TestAdminUsersRouteRequiresAdminRole`
+- `TestAdminUsersRouteAllowsAdminRole`
+- `TestApprovalRoutesAllowMatchingRoleMiddleware`
+- `TestAuthRequiredParsesStructuredTokenClaims`
+
+### Backend Test Result
+- The backend test suite passes with:
+
 ```bash
 cd backend
 go test ./...
-go test -v ./handlers
-go test -cover ./...
 ```
 
 ---
 
-## 🚀 Backend API Documentation
+## 🔗 Updated Backend API Documentation
 
-### Service Endpoints - Enhanced for Sprint 3
+This section reflects the current backend API after Sprint 3 enhancements.
 
-#### Create Service (NEW for Issue #64)
-```
-POST /api/services
-Authorization: Bearer {token}
+## Authentication
 
-Request Body:
+### `POST /api/auth/register`
+- Register a new user.
+
+### `POST /api/auth/login`
+- Login and receive lightweight auth token.
+
+### `POST /api/auth/logout`
+- Protected logout endpoint.
+
+### `POST /api/auth/refresh`
+- Protected token refresh endpoint.
+
+---
+
+## Users
+
+### `GET /api/users/:id`
+- Fetch a single user by ID.
+
+### `GET /api/users/:id/profile`
+- Fetch a user profile with preloaded bookings and reviews.
+
+### `PUT /api/users/:id`
+- Protected endpoint for updating user profile fields.
+
+### `GET /api/users`
+- Protected admin-only endpoint.
+- Returns all users in the system.
+- Added during Sprint 3 backend work.
+
+---
+
+## Services
+
+### `GET /api/services`
+- Returns services list.
+- Supports optional filtering and pagination behavior already present in the handler.
+
+### `GET /api/services/:id`
+- Returns a single service with related review data.
+
+### `GET /api/services/category/:category`
+- Returns services for a specific category.
+
+### `POST /api/services`
+- Protected endpoint to create a new service.
+
+### `PUT /api/services/:id`
+- Protected endpoint to update service details.
+
+### `PATCH /api/services/:id/active`
+- Protected endpoint to activate or deactivate a service.
+- Request body:
+
+```json
 {
-  "name": "Campus Library Extension",
-  "description": "Extended library hours service",
-  "category": "library",
-  "location": "Main Building, 3rd Floor",
-  "phone": "555-1234",
-  "email": "library@campus.edu",
-  "hours": "Mon-Fri 8:00 AM - 10:00 PM",
-  "imageUrl": "https://example.com/library.jpg"
+  "isActive": true
 }
+```
 
-Response (201):
+### `DELETE /api/services/:id`
+- Protected endpoint to delete a service.
+
+---
+
+## Bookings
+
+### `POST /api/bookings`
+- Protected endpoint to create a booking.
+
+### `GET /api/bookings/:id`
+- Returns booking details with related user and service information.
+
+### `GET /api/bookings/user/:userId`
+- Returns all bookings for a user.
+- Supports optional `status` query parameter.
+
+Example:
+
+```http
+GET /api/bookings/user/123?status=pending
+```
+
+Supported status values:
+- `pending`
+- `approved`
+- `rejected`
+- `completed`
+- `cancelled`
+
+### `PUT /api/bookings/:id`
+- Protected endpoint to update booking details.
+
+### `PATCH /api/bookings/:id/status`
+- Protected endpoint to cancel a booking by setting status to `cancelled`.
+
+---
+
+## Approval
+
+All approval routes are protected by authentication. Sprint 3 added role-based protection so users can only access the approval routes that match their role.
+
+### Staff Approval Routes
+
+#### `GET /api/approval/staff/:staffId/pending`
+- Staff-only route.
+- Returns pending bookings for the staff member’s service.
+
+#### `GET /api/approval/staff/:staffId/all`
+- Staff-only route.
+- Returns all bookings for the staff member’s service.
+
+#### `PUT /api/approval/bookings/:id/approve`
+- Staff-only route.
+- Approves a booking for the staff member’s service.
+
+Request example:
+
+```json
 {
-  "id": "service-123",
-  "name": "Campus Library Extension",
-  "description": "Extended library hours service",
-  "category": "library",
-  "location": "Main Building, 3rd Floor",
-  "phone": "555-1234",
-  "email": "library@campus.edu",
-  "hours": "Mon-Fri 8:00 AM - 10:00 PM",
-  "imageUrl": "https://example.com/library.jpg",
-  "isActive": true,
-  "createdAt": "2026-03-30T12:00:00Z",
-  "updatedAt": "2026-03-30T12:00:00Z"
-}
-
-Error (400):
-{
-  "error": "Name, description, and location are required"
-}
-```
-
-#### Delete Service (NEW for Issue #64)
-```
-DELETE /api/services/{id}
-Authorization: Bearer {token}
-
-Response (200):
-{
-  "message": "Service deleted successfully"
-}
-
-Error (404):
-{
-  "error": "Service not found"
-}
-```
-
-#### List All Services
-```
-GET /api/services
-
-Response (200):
-[
-  {
-    "id": "1",
-    "name": "Campus Library",
-    "category": "library",
-    "location": "Main Library",
-    "phone": "555-1000",
-    "email": "library@campus.edu",
-    "hours": "Mon-Fri 8:00 AM - 8:00 PM",
-    "isActive": true,
-    "createdAt": "2026-03-30T01:28:00Z",
-    "updatedAt": "2026-03-30T01:28:00Z"
-  },
-  {
-    "id": "2",
-    "name": "Main Dining Hall",
-    "category": "dining",
-    "location": "Student Center",
-    "phone": "555-1001",
-    "email": "dining@campus.edu",
-    "hours": "Mon-Sun 7:00 AM - 10:00 PM",
-    "isActive": true,
-    "createdAt": "2026-03-30T01:28:00Z",
-    "updatedAt": "2026-03-30T01:28:00Z"
-  }
-]
-```
-
-#### Get All Bookings (Admin) - NEW for Issue #62
-```
-GET /api/approval/admin/{userId}/all
-Authorization: Bearer {token}
-
-Query Parameters (Optional):
-- status: pending|approved|rejected
-- serviceId: {id}
-- startDate: {ISO date}
-- endDate: {ISO date}
-
-Response (200):
-[
-  {
-    "id": "booking-123",
-    "serviceId": "service-1",
-    "serviceName": "Campus Library",
-    "userId": "user-456",
-    "userName": "John Student",
-    "userEmail": "john@campus.edu",
-    "bookingDate": "2026-04-15",
-    "startTime": "2026-04-15T10:00:00Z",
-    "endTime": "2026-04-15T12:00:00Z",
-    "status": "pending",
-    "notes": "",
-    "createdAt": "2026-04-10T09:00:00Z",
-    "updatedAt": "2026-04-10T09:00:00Z"
-  }
-]
-```
-
-#### Approve Booking (Admin) - NEW for Issue #63
-```
-PUT /api/approval/admin/{userId}/bookings/{id}/approve
-Authorization: Bearer {token}
-
-Request Body:
-{
-  "notes": "Approved - Library space available"
-}
-
-Response (200):
-{
-  "id": "booking-123",
   "status": "approved",
-  "notes": "Approved - Library space available",
-  "approvalDate": "2026-04-10T14:30:00Z"
-}
-
-Error (403):
-{
-  "error": "Unauthorized - Admin access required"
+  "approvalNotes": "Approved for requested slot",
+  "staffId": "staff-user-id"
 }
 ```
 
-#### Reject Booking (Admin) - NEW for Issue #63
-```
-PUT /api/approval/admin/{userId}/bookings/{id}/reject
-Authorization: Bearer {token}
+#### `PUT /api/approval/bookings/:id/reject`
+- Staff-only route.
+- Rejects a booking for the staff member’s service.
 
-Request Body:
-{
-  "reason": "Service fully booked for requested time"
-}
+Request example:
 
-Response (200):
+```json
 {
-  "id": "booking-123",
   "status": "rejected",
-  "rejectionReason": "Service fully booked for requested time",
-  "rejectionDate": "2026-04-10T14:30:00Z"
+  "approvalNotes": "Conflicts with service availability",
+  "staffId": "staff-user-id"
 }
+```
 
-Error (403):
+### Admin Approval Routes
+
+#### `GET /api/approval/admin/:userId/pending`
+- Admin-only route.
+- Returns all pending bookings across the platform.
+
+#### `GET /api/approval/admin/:userId/all`
+- Admin-only route.
+- Returns all bookings across the platform.
+
+#### `PUT /api/approval/admin/:userId/bookings/:id/approve`
+- Admin-only route.
+- Approves any booking.
+
+#### `PUT /api/approval/admin/:userId/bookings/:id/reject`
+- Admin-only route.
+- Rejects any booking.
+
+### Approval Notification Behavior
+- Student notifications are created when bookings are approved.
+- Student notifications are created when bookings are rejected.
+- This applies to both staff-driven and admin-driven approval flows.
+
+---
+
+## Notifications
+
+### `GET /api/notifications/:userId`
+- Protected endpoint returning notifications for a user.
+
+### `POST /api/notifications`
+- Protected endpoint creating a notification.
+
+Request example:
+
+```json
 {
-  "error": "Unauthorized - Admin access required"
+  "userId": "user-id",
+  "title": "Booking Approved",
+  "message": "Your booking has been approved.",
+  "type": "booking_approval"
 }
 ```
 
-### Database Seeds - Enhanced for Sprint 3
-
-**Services Seeded** (9 total):
-1. Campus Library - library
-2. Main Dining Hall - dining
-3. Campus Shuttle Service - transportation
-4. Campus Health Center - health
-5. Reference Desk - library
-6. Campus Cafe - dining
-7. Parking Services - transportation
-8. Counseling Services - health
-9. Study Rooms - library
-
-**Seed Endpoint**: `POST /api/seed`
-- Creates sample data if database is empty
-- Idempotent (safe to call multiple times)
-- Useful for development and testing
+### `PUT /api/notifications/:id/read`
+- Protected endpoint marking a notification as read.
 
 ---
 
-## 🔧 Additional Changes Made During Sprint
+## Reviews
 
-### Bug Fix: Merge Conflict Resolution
-**File**: `backend/handlers/booking_test.go`
-- **Issue**: Unresolved git merge conflict with conflict markers in imports
-- **Solution**: Removed conflict markers and consolidated imports
-- **Status**: ✅ RESOLVED
+### `GET /api/reviews/service/:serviceId`
+- Returns reviews for a service.
 
-### Database Enhancement: Seed Data Expansion
-**File**: `backend/seed.go`
-- **Issue**: Only 1 service (Campus Library) available
-- **Solution**: Added 8 additional services across categories
-- **Services Added**:
-  - Main Dining Hall (dining)
-  - Campus Shuttle Service (transportation)
-  - Campus Health Center (health)
-  - Reference Desk (library)
-  - Campus Cafe (dining)
-  - Parking Services (transportation)
-  - Counseling Services (health)
-  - Study Rooms (library)
-- **Result**: 9 total services available for testing
+### `GET /api/reviews/:id`
+- Returns a single review.
+
+### `POST /api/reviews`
+- Protected endpoint creating a review.
+
+### `DELETE /api/reviews/:id`
+- Protected endpoint deleting a review.
 
 ---
 
-## ✅ Testing & Quality Assurance
+## 📌 Sprint 3 Deliverables Summary
 
-### Frontend Testing Checklist
-- ✅ Component renders without errors
-- ✅ All tabs functioning correctly
-- ✅ Bookings display with correct data
-- ✅ Services display in responsive grid
-- ✅ Filtering works for status and category
-- ✅ Create service form validates inputs
-- ✅ Delete service requires confirmation
-- ✅ Approve booking updates status
-- ✅ Reject booking updates status
-- ✅ Statistics cards show correct counts
-- ✅ Modals open and close properly
-- ✅ Error messages display on failures
-- ✅ Loading states display correctly
-- ✅ Mobile responsive design works
-- ✅ All buttons and links functional
+Sprint 3 successfully delivered:
+- a full admin dashboard for viewing all bookings
+- admin approval and rejection workflows
+- create and delete service UI
+- stronger backend role-based protection
+- admin-only all-users endpoint
+- booking notification verification for approval and rejection flows
+- expanded unit test coverage across frontend and backend
+- updated backend API documentation aligned with implemented routes
 
-### Backend Testing Checklist
-- ✅ Create service endpoint working
-- ✅ Delete service endpoint working
-- ✅ Get all bookings endpoint working
-- ✅ Approve booking endpoint working
-- ✅ Reject booking endpoint working
-- ✅ Admin authorization enforced
-- ✅ Error handling for invalid requests
-- ✅ Database seeding works correctly
-- ✅ All routes registered
-- ✅ Response validation passing
-
-### Manual Testing
-- ✅ Login as admin user
-- ✅ View all bookings dashboard
-- ✅ Filter by status and service
-- ✅ Approve pending booking
-- ✅ Reject pending booking
-- ✅ Create new service
-- ✅ Delete existing service
-- ✅ Verify real-time updates
-- ✅ Test on mobile device
-- ✅ Test on tablet device
-
----
-
-## 📊 Sprint Metrics
-
-### Issues Completed: 3/3 (100%)
-| Issue | Points | Status |
-|-------|--------|--------|
-| #62 - Admin Dashboard Overview | 13 | ✅ Done |
-| #63 - Approve & Reject Bookings | 8 | ✅ Done |
-| #64 - Service Create & Delete | 13 | ✅ Done |
-| **Total** | **34** | **100%** |
-
-### Code Statistics
-- **Frontend Changes**:
-  - Files Modified: 2
-  - Lines Added: 300+
-  - Functions Added: 8
-  - Tests Added: 30+
-  
-- **Backend Changes**:
-  - Files Modified: 2
-  - Bugs Fixed: 1
-  - Enhancements: 1
-
-- **Test Coverage**:
-  - Frontend Unit Tests: 30+
-  - Backend Tests: 50+ (existing)
-  - Integration Points: 5
-
----
-
-## 🎯 Sprint Goals Achievement
-
-| Goal | Objective | Status |
-|------|-----------|--------|
-| Admin Bookings Overview | Display all bookings with filters | ✅ Complete |
-| Admin Approval | Approve/reject bookings with notes | ✅ Complete |
-| Service Management | Create & delete services from UI | ✅ Complete |
-| Responsive Design | Mobile/tablet/desktop support | ✅ Complete |
-| Comprehensive Tests | Unit tests for all features | ✅ Complete |
-| Documentation | API docs and code documentation | ✅ Complete |
-
----
-
-## 🚀 Deployment Instructions
-
-### Frontend Deployment
-```bash
-cd frontend
-npm install
-npm test
-npm run build
-# Deploy build/ directory to hosting
-```
-
-### Backend Deployment
-```bash
-cd backend
-go build -o smart-campus-services
-./smart-campus-services
-# Or: go run .
-```
-
-### Environment Variables Required
-```
-PORT=8080
-GIN_MODE=release
-DB_PATH=data/smart_campus.db
-```
-
----
-
-## 📝 Future Enhancements
-
-1. **Search Functionality**: Add search by student name/email in bookings table
-2. **Export Reports**: Export bookings and services to CSV/PDF
-3. **Bulk Operations**: Bulk approve/reject multiple bookings
-4. **Service Analytics**: Charts showing booking trends
-5. **Email Notifications**: Send emails to students on booking status change
-6. **Audit Logs**: Track all admin actions with timestamps
-7. **Advanced Filtering**: Date range filters, time zone support
-8. **Service Availability**: Show real-time service availability
-9. **Auto-Approve**: Rules-based automatic approval system
-10. **Dashboard Analytics**: Key metrics and insights for admin
-
----
-
-## 📚 Documentation References
-
-- [AdminDashboard Component](frontend/src/pages/AdminDashboard.js)
-- [AdminDashboard Tests](frontend/src/pages/AdminDashboard.test.js)
-- [AdminDashboard Styles](frontend/src/styles/AdminDashboard.css)
-- [Backend Handlers](backend/handlers/)
-- [Backend Models](backend/models/models.go)
-- [API Documentation](README.md#api-endpoints)
-
----
-
-## ✨ Conclusion
-
-Sprint 3 successfully delivered all planned admin features:
-- ✅ Comprehensive admin dashboard with real-time bookings overview
-- ✅ Full approval/rejection workflow with audit trail
-- ✅ Complete service management interface
-- ✅ 30+ unit tests ensuring code quality
-- ✅ Responsive design for all devices
-- ✅ Production-ready code with error handling
-
-All team members contributed to successful completion of sprint goals with high code quality and comprehensive testing.
+This sprint significantly improved both administrator capabilities and backend reliability for the Smart Campus Services Platform.
