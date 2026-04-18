@@ -107,13 +107,16 @@ POST   /api/auth/refresh     - Refresh token
 
 ### Services
 ```
-GET    /api/services         - List all services
+GET    /api/services         - List services (supports search/filter/pagination)
 GET    /api/services/:id     - Get service details
 POST   /api/services         - Create service (Admin)
 PUT    /api/services/:id     - Update service (Admin)
 DELETE /api/services/:id     - Delete service (Admin)
 GET    /api/services/category/:category - Get by category
 ```
+
+`GET /api/services` supports optional query params:
+`q`, `category`, `activeOnly`, `limit`, `offset`, `sortBy`, `sortOrder`.
 
 ### Bookings
 ```
