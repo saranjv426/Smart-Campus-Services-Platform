@@ -39,6 +39,7 @@ export const serviceAPI = {
   getService: (id) => apiClient.get(`/services/${id}`),
   createService: (serviceData) => apiClient.post('/services', serviceData),
   updateService: (id, serviceData) => apiClient.put(`/services/${id}`, serviceData),
+  updateServiceActive: (id, isActive) => apiClient.patch(`/services/${id}/active`, { isActive }),
   deleteService: (id) => apiClient.delete(`/services/${id}`),
   getServicesByCategory: (category) => apiClient.get(`/services/category/${category}`),
 };
@@ -47,7 +48,10 @@ export const bookingAPI = {
   getServices: () => apiClient.get('/services'),
   createBooking: (bookingData) => apiClient.post('/bookings', bookingData),
   getBooking: (id) => apiClient.get(`/bookings/${id}`),
-  getUserBookings: (userId) => apiClient.get(`/bookings/user/${userId}`),
+  getUserBookings: (userId, status) => apiClient.get(
+    `/bookings/user/${userId}`,
+    status ? { params: { status } } : undefined
+  ),
   updateBooking: (id, bookingData) => apiClient.put(`/bookings/${id}`, bookingData),
   cancelBooking: (id) => apiClient.delete(`/bookings/${id}`),
 };
@@ -55,6 +59,7 @@ export const bookingAPI = {
 export const reviewAPI = {
   createReview: (reviewData) => apiClient.post('/reviews', reviewData),
   getServiceReviews: (serviceId) => apiClient.get(`/reviews/service/${serviceId}`),
+  getUserReviews: (userId) => apiClient.get(`/reviews/user/${userId}`),
   getReview: (id) => apiClient.get(`/reviews/${id}`),
   deleteReview: (id) => apiClient.delete(`/reviews/${id}`),
 };

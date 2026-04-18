@@ -3,9 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"smart-campus-services/models"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"smart-campus-services/models"
 )
 
 type ReviewHandler struct {
@@ -79,13 +80,33 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 	c.JSON(http.StatusOK, review)
 }
 
-// DeleteReview deletes a review
+// GetUserReviews returns all reviews for a specific user
+func (h *ReviewHandler) GetUserReviews(c *gin.Context) {
+	userId := c.Param("userId")
+	var reviews []models.Review
+
+	if err := h.db.Preload("User").Preload("Service").Where("user_id = ?", userId).Order("created_at DESC").Find(&reviews).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"})
+		return
+	}
+
+	c.JSON(http.StatusOK, reviews)
+}
+
+// DeleteReview deletes a review (only the review owner can delete)
 func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 	id := c.Param("id")
+	userId := c.GetString("userId") // Get user from context (should be set by auth middleware)
 	var review models.Review
 
 	if err := h.db.First(&review, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Review not found"})
+		return
+	}
+
+	// Check ownership - user can only delete their own reviews
+	if userId != "" && review.UserID != userId {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only delete your own reviews"})
 		return
 	}
 
