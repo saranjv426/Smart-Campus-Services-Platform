@@ -513,13 +513,22 @@ const AdminDashboard = () => {
             </div>
           ) : (
             <div className="services-grid">
-              {services.map((service) => (
+              {services.map((service) => {
+                const categoryIcons = {
+                  library: '📚',
+                  dining: '🍽️',
+                  transportation: '🚌',
+                  health: '🏥',
+                };
+                const icon = categoryIcons[service.category] || '🏢';
+                
+                return (
                 <div key={service.id} className="service-card">
                   <div className="service-image">
-                    {service.imageUrl ? (
+                    {service.imageUrl && service.imageUrl.trim() ? (
                       <img src={service.imageUrl} alt={service.name} />
                     ) : (
-                      <div className="image-placeholder">📷</div>
+                      <div className="image-placeholder">{icon}</div>
                     )}
                   </div>
                   <div className="service-content">
@@ -542,7 +551,8 @@ const AdminDashboard = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
