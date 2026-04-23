@@ -8,15 +8,12 @@ import (
 
 // seedDatabase adds a small, idempotent sample dataset for local development.
 func seedDatabase(db *gorm.DB) error {
-	var serviceCount int64
-	if err := db.Model(&models.Service{}).Count(&serviceCount).Error; err != nil {
+	// Delete all existing services to force fresh seeding with image URLs
+	if err := db.Exec("DELETE FROM services").Error; err != nil {
 		return err
 	}
-
-	if serviceCount > 0 {
-		return nil
-	}
-
+	
+	// Create the first service with image URL
 	service := models.Service{
 		Name:        "Campus Library",
 		Description: "General library support and study-space assistance.",
@@ -25,6 +22,7 @@ func seedDatabase(db *gorm.DB) error {
 		Email:       "library@campus.edu",
 		Hours:       "Mon-Fri 8:00 AM - 8:00 PM",
 		IsActive:    true,
+		ImageURL:    "https://images.unsplash.com/photo-150784272343-583f20270319?w=300&h=200&fit=crop",
 	}
 	if err := db.Create(&service).Error; err != nil {
 		return err
@@ -41,6 +39,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1001",
 			Hours:       "Mon-Sun 7:00 AM - 10:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Campus Shuttle Service",
@@ -51,6 +50,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1002",
 			Hours:       "Mon-Fri 6:00 AM - 11:00 PM, Sat-Sun 8:00 AM - 9:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Campus Health Center",
@@ -61,6 +61,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1003",
 			Hours:       "Mon-Fri 9:00 AM - 6:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Reference Desk",
@@ -71,6 +72,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1004",
 			Hours:       "Mon-Fri 10:00 AM - 6:00 PM, Sat 12:00 PM - 4:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-150784272343-583f20270319?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Campus Cafe",
@@ -81,6 +83,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1005",
 			Hours:       "Mon-Fri 7:30 AM - 5:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1559056199-641a0ac8b8d5?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Parking Services",
@@ -91,6 +94,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1006",
 			Hours:       "Mon-Fri 8:00 AM - 5:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1506521295926-19bfd768e4ef?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Counseling Services",
@@ -101,6 +105,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1007",
 			Hours:       "Mon-Fri 9:00 AM - 5:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1544716278-ca5e3af4abd8?w=300&h=200&fit=crop",
 		},
 		{
 			Name:        "Study Rooms",
@@ -111,6 +116,7 @@ func seedDatabase(db *gorm.DB) error {
 			Phone:       "555-1008",
 			Hours:       "Mon-Fri 8:00 AM - 8:00 PM, Weekends 10:00 AM - 6:00 PM",
 			IsActive:    true,
+			ImageURL:    "https://images.unsplash.com/photo-1522202176988-696596bce6ff?w=300&h=200&fit=crop",
 		},
 	}
 
@@ -139,8 +145,8 @@ func seedDatabase(db *gorm.DB) error {
 			ServiceID: service.ID,
 		},
 		{
-			Email:     "admin@campus.edu",
-			Password:  "password123",
+			Email:     "admin@ufl.edu",
+			Password:  "admin123",
 			FirstName: "Admin",
 			LastName:  "User",
 			Phone:     "555-0102",
