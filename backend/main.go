@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 
 	"smart-campus-services/handlers"
+	"smart-campus-services/middleware"
 	"smart-campus-services/models"
+	"smart-campus-services/validation"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -18,6 +20,11 @@ func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
+	}
+
+	// Register custom request validators before handling any requests.
+	if err := validation.Init(); err != nil {
+		log.Fatalf("Failed to initialize validators: %v", err)
 	}
 
 	// Initialize database
@@ -68,6 +75,9 @@ func main() {
 	reviewHandlers := handlers.NewReviewHandler(db)
 	userHandlers := handlers.NewUserHandler(db)
 	approvalHandlers := handlers.NewApprovalHandler(db)
+	authRequired := middleware.AuthRequired()
+	adminOnly := middleware.RequireRoles("admin")
+	staffOnly := middleware.RequireRoles("staff")
 
 	// Auth routes
 	auth := router.Group("/api/auth")
@@ -84,6 +94,17 @@ func main() {
 		users.GET("/:id", userHandlers.GetUser)
 		users.PUT("/:id", userHandlers.UpdateUser)
 		users.GET("/:id/profile", userHandlers.GetProfile)
+		users.GET("", func(c *gin.Context) {
+			middleware.AuthRequired()(c)
+			if c.IsAborted() {
+				return
+			}
+			middleware.RequireRoles("admin")(c)
+			if c.IsAborted() {
+				return
+			}
+			userHandlers.GetAllUsers(c)
+		})
 	}
 
 	// Service routes
@@ -109,16 +130,25 @@ func main() {
 
 	// Approval routes (staff only)
 	approval := router.Group("/api/approval")
+	approval.Use(authRequired)
 	{
-		approval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
-		approval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
-		approval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
-		approval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
-		// Admin approval routes
-		approval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
-		approval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
-		approval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
-		approval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		staffApproval := approval.Group("")
+		staffApproval.Use(staffOnly)
+		{
+			staffApproval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
+			staffApproval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
+			staffApproval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
+			staffApproval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
+		}
+
+		adminApproval := approval.Group("")
+		adminApproval.Use(adminOnly)
+		{
+			adminApproval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
+			adminApproval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
+			adminApproval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
+			adminApproval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		}
 	}
 
 	// Notification routes
