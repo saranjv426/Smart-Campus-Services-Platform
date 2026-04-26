@@ -1,206 +1,291 @@
 # Smart Campus Services Platform
 
-A comprehensive full-stack web application for managing campus services at the University of Florida. This platform allows students and staff to discover, book, and manage various campus services including library services, dining, transportation, maintenance, and more.
+Smart Campus Services Platform is a full-stack web application for discovering, booking, reviewing, and managing campus services. Students can browse services, create bookings, review services, and manage their profiles. Staff and administrators can manage services, review booking requests, and track service activity.
 
-## Features
+## Requirements
 
-### For Students and Staff
-- **Service Discovery**: Browse and search campus services by category
-- **Booking System**: Reserve services with intuitive date/time selection
-- **Service Reviews**: Read and write reviews with ratings for services
-- **Personal Bookings**: Manage your current and past bookings
-- **User Profile**: Update profile information and view booking history
-- **Notifications**: Get updates about your bookings and service availability
+Install these tools before running the application:
 
-### For Administrators
-- **Service Management**: Add, update, and delete campus services
-- **Booking Management**: Track and manage service bookings
-- **Analytics**: View service ratings and user reviews
-- **System Monitoring**: Track service availability and usage
+| Tool | Required version | Used for |
+| --- | --- | --- |
+| Git | Current stable version | Cloning and version control |
+| Go | 1.21 or newer | Backend API |
+| Node.js | 14 or newer | React frontend |
+| npm | Included with Node.js | Frontend dependencies and scripts |
+| SQLite | No separate server required | Local database storage |
 
-## Technology Stack
+The backend stores data in a local SQLite file at `backend/data/smart_campus.db` by default.
 
-### Frontend
-- **Framework**: React 18
-- **Routing**: React Router v6
-- **HTTP Client**: Axios
-- **Styling**: CSS3 with CSS Variables
-- **State Management**: React Hooks
+## Project Structure
 
-### Backend
-- **Language**: Go 1.21+
-- **Framework**: Gin (Web Framework)
-- **ORM**: GORM
-- **Database**: SQLite
-- **Authentication**: Token-based (JWT-ready)
-
-### Database
-- **SQLite**: Embedded relational database for data persistence
-- **Models**: User, Service, Booking, Review, Notification
+```text
+Smart-Campus-Services-Platform/
+|-- backend/                 # Go, Gin, GORM, SQLite API
+|   |-- handlers/            # HTTP handlers and handler tests
+|   |-- models/              # Database models
+|   |-- router/              # Route setup tests
+|   |-- testutil/            # Shared backend test helpers
+|   |-- validation/          # Request validation helpers
+|   `-- main.go              # Backend entry point
+|-- frontend/                # React application
+|   |-- src/pages/           # Main UI pages
+|   |-- src/components/      # Shared UI components
+|   `-- src/services/        # API client helpers
+|-- TESTING_GUIDE.md         # Backend and manual testing instructions
+`-- README.md                # Front-page setup and usage guide
+```
 
 ## Quick Start
 
-### Prerequisites
-- Node.js 14+ (for frontend)
-- Go 1.21+ (for backend)
-- SQLite (embedded, no server required)
-- Git
+Clone the repository:
 
-### Setup Backend
-
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your SQLite database path
-   ```
-
-3. Install dependencies:
-   ```bash
-   go mod download
-   ```
-
-4. Run the backend:
-   ```bash
-   go run main.go
-   ```
-
-   Backend will be available at `http://localhost:8080`
-
-### Setup Frontend
-
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create environment file:
-   ```bash
-   echo "REACT_APP_API_URL=http://localhost:8080/api" > .env
-   ```
-
-4. Start the development server:
-   ```bash
-   npm start
-   ```
-
-   Frontend will be available at `http://localhost:3000`
-
-## API Endpoints
-
-### Authentication
-```
-POST   /api/auth/register    - Register new user
-POST   /api/auth/login       - Login user
-POST   /api/auth/logout      - Logout user
-POST   /api/auth/refresh     - Refresh token
+```bash
+git clone https://github.com/saranjv426/Smart-Campus-Services-Platform.git
+cd Smart-Campus-Services-Platform
 ```
 
-### Services
-```
-GET    /api/services         - List services (supports search/filter/pagination)
-GET    /api/services/:id     - Get service details
-POST   /api/services         - Create service (Admin)
-PUT    /api/services/:id     - Update service (Admin)
-DELETE /api/services/:id     - Delete service (Admin)
-GET    /api/services/category/:category - Get by category
+Install backend dependencies:
+
+```bash
+cd backend
+go mod download
+cd ..
 ```
 
-`GET /api/services` supports optional query params:
-`q`, `category`, `activeOnly`, `limit`, `offset`, `sortBy`, `sortOrder`.
+Install frontend dependencies:
 
-### Bookings
-```
-POST   /api/bookings         - Create booking
-GET    /api/bookings/:id     - Get booking details
-GET    /api/bookings/user/:userId - Get user bookings
-PUT    /api/bookings/:id     - Update booking
-DELETE /api/bookings/:id     - Cancel booking
+```bash
+cd frontend
+npm install
+cd ..
 ```
 
-### Reviews
-```
-POST   /api/reviews          - Create review
-GET    /api/reviews/service/:serviceId - Get service reviews
-GET    /api/reviews/:id      - Get review details
-DELETE /api/reviews/:id      - Delete review
+Create the frontend environment file:
+
+```bash
+cp frontend/.env.example frontend/.env
 ```
 
-### Users
-```
-GET    /api/users/:id        - Get user details
-PUT    /api/users/:id        - Update user profile
-GET    /api/users/:id/profile - Get full profile
-```
+The default value is:
 
-### Notifications
-```
-GET    /api/notifications/:userId - Get user notifications
-POST   /api/notifications    - Create notification
-PUT    /api/notifications/:id/read - Mark as read
-```
-
-## Service Categories
-
-- 📚 **Library Services** - Study rooms, resource access
-- 🍽️ **Dining Services** - Cafeterias, meal plans
-- 🚌 **Transportation** - Campus shuttles, parking
-- 🔧 **Maintenance** - Facility repairs, support
-- ⚕️ **Health Services** - Medical appointments, wellness
-- 🎓 **Academic Support** - Tutoring, advising
-- 🏋️ **Recreation** - Gym, sports facilities
-- 🎭 **Events** - Campus activities, workshops
-
-## Configuration
-
-### Environment Variables
-
-**Backend (.env)**
-```
-DB_PATH=data/smart_campus.db
-PORT=8080
-GIN_MODE=debug
-```
-
-**Frontend (.env)**
-```
+```env
 REACT_APP_API_URL=http://localhost:8080/api
 ```
 
-## Security Considerations
+The backend does not require a `.env` file for local development. Optional backend environment variables are listed below.
 
-- [ ] Implement JWT authentication
-- [ ] Hash passwords with bcrypt
-- [ ] Add rate limiting
-- [ ] Implement CORS properly
-- [ ] Validate all inputs
-- [ ] Use HTTPS in production
+## Running The Application
 
-## Future Enhancements
+Start the backend API from one terminal:
 
-- Real-time notifications with WebSockets
-- Email notifications
-- Payment integration
-- Admin dashboard
-- Advanced reporting
-- Mobile app
-- Service provider portal
+```bash
+cd backend
+go run main.go
+```
 
----
+The backend runs at `http://localhost:8080`.
 
-**Last Updated**: February 1, 2026
-**Version**: 1.0.0
+Start the frontend from a second terminal:
 
-# Project Members
+```bash
+cd frontend
+npm start
+```
+
+The frontend runs at `http://localhost:3000`.
+
+Open `http://localhost:3000` in a browser to use the application.
+
+## Seeding Local Data
+
+After the backend is running, seed the local SQLite database with development data:
+
+```bash
+curl -X POST http://localhost:8080/api/seed
+```
+
+The seed endpoint is intended for local development. It creates sample users, services, bookings, and related data used by the app flows.
+
+## Using The Application
+
+Common local workflow:
+
+1. Start the backend with `go run main.go`.
+2. Start the frontend with `npm start`.
+3. Seed the database with `POST /api/seed`.
+4. Register or log in from the frontend.
+5. Browse services from the home or services page.
+6. Open a service detail page to create bookings or reviews.
+7. Use staff or admin dashboards to review and manage bookings and services.
+
+Main user roles:
+
+- `student`: browse services, create bookings, manage personal bookings, write reviews.
+- `staff`: manage booking approvals for the staff member's assigned service.
+- `admin`: manage broader service and booking workflows.
+
+## Configuration
+
+Backend environment variables are optional for local development:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `8080` | Backend API port |
+| `DB_PATH` | `data/smart_campus.db` | SQLite database file path, relative to `backend/` when running from that directory |
+| `GIN_MODE` | `debug` | Gin runtime mode, such as `debug` or `release` |
+
+Example backend `.env` file in `backend/`:
+
+```env
+PORT=8080
+DB_PATH=data/smart_campus.db
+GIN_MODE=debug
+```
+
+Frontend environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `REACT_APP_API_URL` | `http://localhost:8080/api` | Backend API base URL used by the React app |
+
+## Running Tests
+
+Run all backend tests:
+
+```bash
+cd backend
+go test ./...
+```
+
+If your environment blocks Go from writing to the default build cache, use a local temporary cache:
+
+```bash
+cd backend
+GOCACHE=/tmp/go-build-cache go test ./...
+```
+
+Run only backend handler tests:
+
+```bash
+cd backend
+go test ./handlers
+```
+
+Run frontend tests:
+
+```bash
+cd frontend
+npm test
+```
+
+More detailed testing guidance is available in [TESTING_GUIDE.md](TESTING_GUIDE.md).
+
+## API Overview
+
+The backend API is available under `/api`.
+
+### Authentication
+
+```text
+POST   /api/auth/register
+POST   /api/auth/login
+POST   /api/auth/logout
+POST   /api/auth/refresh
+```
+
+### Services
+
+```text
+GET    /api/services
+GET    /api/services/:id
+POST   /api/services
+PUT    /api/services/:id
+PATCH  /api/services/:id/active
+DELETE /api/services/:id
+GET    /api/services/category/:category
+```
+
+`GET /api/services` supports `q`, `category`, `activeOnly`, `limit`, `offset`, `sortBy`, and `sortOrder`.
+
+### Bookings
+
+```text
+POST   /api/bookings
+GET    /api/bookings/:id
+GET    /api/bookings/user/:userId
+PUT    /api/bookings/:id
+DELETE /api/bookings/:id
+```
+
+### Reviews
+
+```text
+POST   /api/reviews
+GET    /api/reviews/service/:serviceId
+GET    /api/reviews/user/:userId
+GET    /api/reviews/:id
+DELETE /api/reviews/:id
+```
+
+### Users
+
+```text
+GET    /api/users/:id
+PUT    /api/users/:id
+GET    /api/users/:id/profile
+```
+
+### Notifications
+
+```text
+GET    /api/notifications/:userId
+POST   /api/notifications
+PUT    /api/notifications/:id/read
+```
+
+### Approvals
+
+```text
+GET    /api/approval/staff/:staffId/pending
+GET    /api/approval/staff/:staffId/all
+PUT    /api/approval/bookings/:id/approve
+PUT    /api/approval/bookings/:id/reject
+GET    /api/approval/admin/:userId/pending
+GET    /api/approval/admin/:userId/all
+PUT    /api/approval/admin/:userId/bookings/:id/approve
+PUT    /api/approval/admin/:userId/bookings/:id/reject
+```
+
+## Troubleshooting
+
+Backend port already in use:
+
+```bash
+cd backend
+PORT=8081 go run main.go
+```
+
+Frontend cannot reach the backend:
+
+- Confirm the backend is running at `http://localhost:8080`.
+- Confirm `frontend/.env` contains `REACT_APP_API_URL=http://localhost:8080/api`.
+- Restart the frontend after changing `.env`.
+
+Database issues:
+
+- Confirm you are running backend commands from the `backend/` directory.
+- The default database file is `backend/data/smart_campus.db`.
+- For a clean local database, stop the backend, remove the SQLite file, restart the backend, and run the seed endpoint again.
+
+Go test cache permission issues:
+
+```bash
+cd backend
+GOCACHE=/tmp/go-build-cache go test ./...
+```
+
+## Project Members
+
 - Venkata Sai Saran Jonnalagadda
 - Srikar Panuganti
 - Keerthi Reddy Gudibandi
