@@ -77,12 +77,16 @@ describe('Bookings Page Component', () => {
     bookingAPI.cancelBooking.mockResolvedValue({ data: { success: true } });
   });
 
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   test('renders bookings page', () => {
     renderBookings();
     expect(screen.getByText(/My Bookings/i)).toBeInTheDocument();
   });
 
-  test('loads user bookings on mount', async () => {
+  test('loads user bookings on mount without a status filter', async () => {
     renderBookings();
 
     await waitFor(() => {
@@ -90,7 +94,7 @@ describe('Bookings Page Component', () => {
     });
   });
 
-  test('displays booking items', async () => {
+  test('displays booking items and status labels', async () => {
     renderBookings();
 
     expect(await screen.findByText('Main Library')).toBeInTheDocument();
@@ -145,6 +149,8 @@ describe('Bookings Page Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
       expect(screen.getByText('Student Dining')).toBeInTheDocument();
+      expect(screen.getAllByText('Accepted').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Completed').length).toBeGreaterThan(0);
     });
   });
 

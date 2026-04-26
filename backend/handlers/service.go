@@ -29,6 +29,10 @@ type CreateServiceRequest struct {
 	Hours       string `json:"hours"`
 }
 
+type UpdateServiceActiveRequest struct {
+	IsActive *bool `json:"isActive" binding:"required"`
+}
+
 const (
 	defaultPageSize = 100
 	maxPageSize     = 200
@@ -176,7 +180,45 @@ func (h *ServiceHandler) UpdateService(c *gin.Context) {
 	}
 
 	var service models.Service
-	if err := h.db.Model(&service).Where("id = ?", id).Updates(&req).Error; err != nil {
+	if err := h.db.First(&service, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch service"})
+		return
+	}
+
+	if err := h.db.Model(&service).Updates(&req).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
+		return
+	}
+
+	c.JSON(http.StatusOK, service)
+}
+
+// UpdateServiceActive toggles a service's active state without updating other fields.
+func (h *ServiceHandler) UpdateServiceActive(c *gin.Context) {
+	id := c.Param("id")
+	var req UpdateServiceActiveRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil || req.IsActive == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "isActive is required"})
+		return
+	}
+
+	var service models.Service
+	if err := h.db.First(&service, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch service"})
+		return
+	}
+
+	service.IsActive = *req.IsActive
+	if err := h.db.Save(&service).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update service"})
 		return
 	}

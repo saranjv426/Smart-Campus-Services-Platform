@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 
@@ -92,6 +93,11 @@ func TestUpdateServicePersistsChanges(t *testing.T) {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
+	resp := decodeJSON[models.Service](t, rec)
+	if resp.ID != service.ID || resp.Name != "Updated Shuttle" {
+		t.Fatalf("expected updated service in response, got %+v", resp)
+	}
+
 	var updated models.Service
 	if err := db.First(&updated, "id = ?", service.ID).Error; err != nil {
 		t.Fatalf("failed to reload service: %v", err)
@@ -99,6 +105,128 @@ func TestUpdateServicePersistsChanges(t *testing.T) {
 
 	if updated.Name != "Updated Shuttle" {
 		t.Fatalf("expected service name to be updated, got %s", updated.Name)
+	}
+}
+
+func TestUpdateServiceActiveActivatesServiceWithoutChangingOtherFields(t *testing.T) {
+	db := setupTestDB(t)
+	service := createServiceFixture(t, db, func(service *models.Service) {
+		service.IsActive = false
+		service.Description = "Original description"
+		service.Location = "North Hub"
+	})
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PATCH("/services/:id/active", handler.UpdateServiceActive)
+
+	rec := performRequest(t, router, http.MethodPatch, "/services/"+service.ID+"/active", UpdateServiceActiveRequest{
+		IsActive: boolPtr(true),
+	})
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	resp := decodeJSON[models.Service](t, rec)
+	if !resp.IsActive || resp.Description != "Original description" || resp.Location != "North Hub" {
+		t.Fatalf("expected only active flag to change, got %+v", resp)
+	}
+
+	var updated models.Service
+	if err := db.First(&updated, "id = ?", service.ID).Error; err != nil {
+		t.Fatalf("failed to reload service: %v", err)
+	}
+	if !updated.IsActive || updated.Description != "Original description" || updated.Location != "North Hub" {
+		t.Fatalf("expected persisted service toggle only, got %+v", updated)
+	}
+}
+
+func TestUpdateServiceActiveDeactivatesServiceAndAffectsActiveOnlyFilter(t *testing.T) {
+	db := setupTestDB(t)
+	activeService := createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Always Open"
+		service.IsActive = true
+	})
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Already Inactive"
+		service.IsActive = false
+	})
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PATCH("/services/:id/active", handler.UpdateServiceActive)
+	router.GET("/services", handler.ListServices)
+
+	rec := performRequest(t, router, http.MethodPatch, "/services/"+activeService.ID+"/active", UpdateServiceActiveRequest{
+		IsActive: boolPtr(false),
+	})
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	filteredRec := performRequest(t, router, http.MethodGet, "/services?activeOnly=true", nil)
+
+	if filteredRec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", filteredRec.Code, filteredRec.Body.String())
+	}
+
+	services := decodeJSON[[]models.Service](t, filteredRec)
+	if len(services) != 0 {
+		t.Fatalf("expected no active services after deactivation, got %+v", services)
+	}
+}
+
+func TestUpdateServiceActiveReturnsBadRequestForInvalidPayload(t *testing.T) {
+	db := setupTestDB(t)
+	service := createServiceFixture(t, db)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PATCH("/services/:id/active", handler.UpdateServiceActive)
+
+	rec := performRequest(t, router, http.MethodPatch, "/services/"+service.ID+"/active", map[string]any{})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestUpdateServiceActiveReturnsNotFoundForMissingService(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PATCH("/services/:id/active", handler.UpdateServiceActive)
+
+	rec := performRequest(t, router, http.MethodPatch, "/services/missing/active", UpdateServiceActiveRequest{
+		IsActive: boolPtr(true),
+	})
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestUpdateServiceActiveRejectsMalformedJSON(t *testing.T) {
+	db := setupTestDB(t)
+	service := createServiceFixture(t, db)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PATCH("/services/:id/active", handler.UpdateServiceActive)
+
+	req, err := http.NewRequest(http.MethodPatch, "/services/"+service.ID+"/active", bytes.NewBufferString("{"))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := performRawRequest(router, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -149,4 +277,8 @@ func TestGetServicesByCategoryFiltersResults(t *testing.T) {
 	if len(services) != 1 || services[0].Category != "health" {
 		t.Fatalf("expected one health service, got %+v", services)
 	}
+}
+
+func boolPtr(value bool) *bool {
+	return &value
 }
