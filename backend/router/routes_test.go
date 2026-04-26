@@ -5,9 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"smart-campus-services/middleware"
+	"smart-campus-services/models"
 	"smart-campus-services/testutil"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func setupRouterTest(t *testing.T) *gin.Engine {
@@ -20,6 +23,16 @@ func setupRouterTest(t *testing.T) *gin.Engine {
 	return r
 }
 
+func setupRouterTestWithDB(t *testing.T) (*gin.Engine, *gorm.DB) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	db := testutil.NewTestDB(t)
+	r := gin.New()
+	RegisterAPIRoutes(r, db)
+	return r, db
+}
+
 func TestProtectedRoutesRequireAuth(t *testing.T) {
 	r := setupRouterTest(t)
 
@@ -30,6 +43,7 @@ func TestProtectedRoutesRequireAuth(t *testing.T) {
 	}{
 		{name: "auth logout", method: http.MethodPost, path: "/api/auth/logout"},
 		{name: "auth refresh", method: http.MethodPost, path: "/api/auth/refresh"},
+		{name: "admin user list", method: http.MethodGet, path: "/api/users"},
 		{name: "user update", method: http.MethodPut, path: "/api/users/123"},
 		{name: "service create", method: http.MethodPost, path: "/api/services"},
 		{name: "service update", method: http.MethodPut, path: "/api/services/123"},
@@ -88,5 +102,163 @@ func TestProtectedRouteAllowsBearerToken(t *testing.T) {
 	resp := testutil.PerformRawRequest(r, req)
 	if resp.Code == http.StatusUnauthorized {
 		t.Fatalf("expected authenticated request to pass middleware, got %d body=%s", resp.Code, resp.Body.String())
+	}
+}
+func TestApprovalRoutesRequireMatchingRole(t *testing.T) {
+	r := setupRouterTest(t)
+
+	tests := []struct {
+		name   string
+		method string
+		path   string
+		token  string
+	}{
+		{
+			name:   "staff route rejects admin token",
+			method: http.MethodGet,
+			path:   "/api/approval/staff/123/pending",
+			token:  "user-1|admin|",
+		},
+		{
+			name:   "admin route rejects staff token",
+			method: http.MethodGet,
+			path:   "/api/approval/admin/123/all",
+			token:  "user-2|staff|service-1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			req.Header.Set("Authorization", "Bearer "+tt.token)
+
+			resp := testutil.PerformRawRequest(r, req)
+			if resp.Code != http.StatusForbidden {
+				t.Fatalf("expected status %d, got %d body=%s", http.StatusForbidden, resp.Code, resp.Body.String())
+			}
+		})
+	}
+}
+
+func TestAdminUsersRouteRequiresAdminRole(t *testing.T) {
+	r := setupRouterTest(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
+	req.Header.Set("Authorization", "Bearer user-2|staff|service-1")
+
+	resp := testutil.PerformRawRequest(r, req)
+	if resp.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusForbidden, resp.Code, resp.Body.String())
+	}
+}
+
+func TestAdminUsersRouteAllowsAdminRole(t *testing.T) {
+	r, db := setupRouterTestWithDB(t)
+
+	admin := models.User{
+		ID:        "admin-1",
+		Email:     "admin@example.com",
+		Password:  "secret123",
+		FirstName: "Admin",
+		LastName:  "User",
+		Phone:     "555-1000",
+		Role:      "admin",
+	}
+	if err := db.Create(&admin).Error; err != nil {
+		t.Fatalf("failed to create admin fixture: %v", err)
+	}
+
+	user := models.User{
+		ID:        "student-1",
+		Email:     "student@example.com",
+		Password:  "secret123",
+		FirstName: "Student",
+		LastName:  "User",
+		Phone:     "555-2000",
+		Role:      "student",
+	}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatalf("failed to create user fixture: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
+	req.Header.Set("Authorization", "Bearer admin-1|admin|")
+
+	resp := testutil.PerformRawRequest(r, req)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, resp.Code, resp.Body.String())
+	}
+}
+
+func TestApprovalRoutesAllowMatchingRoleMiddleware(t *testing.T) {
+	r, db := setupRouterTestWithDB(t)
+
+	service := models.Service{
+		ID:          "service-1",
+		Name:        "Library Service",
+		Description: "Main library desk",
+		Category:    "library",
+		Location:    "Library",
+		IsActive:    true,
+	}
+	if err := db.Create(&service).Error; err != nil {
+		t.Fatalf("failed to create service fixture: %v", err)
+	}
+
+	staff := models.User{
+		ID:        "user-2",
+		Email:     "staff@example.com",
+		Password:  "secret123",
+		FirstName: "Staff",
+		LastName:  "Member",
+		Phone:     "555-2000",
+		Role:      "staff",
+		ServiceID: service.ID,
+	}
+	if err := db.Create(&staff).Error; err != nil {
+		t.Fatalf("failed to create staff fixture: %v", err)
+	}
+
+	admin := models.User{
+		ID:        "user-1",
+		Email:     "admin-role@example.com",
+		Password:  "secret123",
+		FirstName: "Admin",
+		LastName:  "Role",
+		Phone:     "555-3000",
+		Role:      "admin",
+	}
+	if err := db.Create(&admin).Error; err != nil {
+		t.Fatalf("failed to create admin role fixture: %v", err)
+	}
+
+	t.Run("staff route accepts staff token", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/approval/staff/"+staff.ID+"/pending", nil)
+		req.Header.Set("Authorization", "Bearer user-2|staff|service-1")
+
+		resp := testutil.PerformRawRequest(r, req)
+		if resp.Code == http.StatusUnauthorized || resp.Code == http.StatusForbidden {
+			t.Fatalf("expected middleware to allow request, got %d body=%s", resp.Code, resp.Body.String())
+		}
+	})
+
+	t.Run("admin route accepts admin token", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/approval/admin/"+admin.ID+"/all", nil)
+		req.Header.Set("Authorization", "Bearer user-1|admin|")
+
+		resp := testutil.PerformRawRequest(r, req)
+		if resp.Code == http.StatusUnauthorized || resp.Code == http.StatusForbidden {
+			t.Fatalf("expected middleware to allow request, got %d body=%s", resp.Code, resp.Body.String())
+		}
+	})
+}
+
+func TestAuthRequiredParsesStructuredTokenClaims(t *testing.T) {
+	claims, ok := middleware.ParseTokenClaims("user-1|staff|service-1")
+	if !ok {
+		t.Fatal("expected structured token to parse successfully")
+	}
+	if claims.UserID != "user-1" || claims.Role != "staff" || claims.ServiceID != "service-1" {
+		t.Fatalf("unexpected claims parsed: %+v", claims)
 	}
 }

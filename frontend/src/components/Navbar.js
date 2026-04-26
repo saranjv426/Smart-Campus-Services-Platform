@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Navbar.css';
+import { getRoleBasedLinks } from '../utils/navbarLinks';
 
 function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -11,13 +12,21 @@ function Navbar() {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     if (token && user) {
-      setIsLoggedIn(true);
-      setCurrentUser(JSON.parse(user));
-    } else {
+      try {
+        const parsedUser = JSON.parse(user);
+        setIsLoggedIn(true);
+        setCurrentUser(parsedUser);
+      } catch (error) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setIsLoggedIn(false);
       setCurrentUser(null);
     }
-  };
+  } else {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+  }
+};
 
   useEffect(() => {
     // Check auth status on mount
@@ -53,6 +62,7 @@ function Navbar() {
     
     navigate('/');
   };
+  const { navLinks, authLinks } = getRoleBasedLinks(isLoggedIn, currentUser);
 
   return (
     <nav className="navbar">
@@ -61,27 +71,46 @@ function Navbar() {
           🏫 Smart Campus Services
         </Link>
         <div className="navbar-menu">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/services" className="nav-link">Services</Link>
-          {isLoggedIn && currentUser?.role === 'student' && <Link to="/bookings" className="nav-link">My Bookings</Link>}
-          {isLoggedIn && currentUser?.role === 'staff' && <Link to="/dashboard/staff" className="nav-link">Staff Dashboard</Link>}
-          {isLoggedIn && currentUser?.role === 'admin' && <Link to="/dashboard/admin" className="nav-link">Admin Dashboard</Link>}
-          
-          <div className="navbar-auth">
-            {isLoggedIn ? (
-              <>
-                <span className="welcome-text">Welcome, {currentUser?.firstName}</span>
-                {currentUser?.role === 'student' && <Link to={`/profile/${currentUser?.id}`} className="nav-link">Profile</Link>}
-                <button onClick={handleLogout} className="logout-btn">Logout</button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="nav-link">Login</Link>
-                <Link to="/register" className="nav-link register-btn">Register</Link>
-              </>
-            )}
-          </div>
-        </div>
+  {navLinks.map((link) => (
+    <Link key={link.label} to={link.path} className="nav-link">
+      {link.label}
+    </Link>
+  ))}
+
+  <div className="navbar-auth">
+    {isLoggedIn ? (
+      <>
+        <span className="welcome-text">Welcome, {currentUser?.firstName}</span>
+
+        {authLinks.map((link) => (
+          <Link
+            key={link.label}
+            to={link.path}
+            className={`nav-link ${link.className || ''}`.trim()}
+          >
+            {link.label}
+          </Link>
+        ))}
+
+        <button onClick={handleLogout} className="logout-btn">
+          Logout
+        </button>
+      </>
+    ) : (
+      <>
+        {authLinks.map((link) => (
+          <Link
+            key={link.label}
+            to={link.path}
+            className={`nav-link ${link.className || ''}`.trim()}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </>
+    )}
+  </div>
+</div>
       </div>
     </nav>
   );
