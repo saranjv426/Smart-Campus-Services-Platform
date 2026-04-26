@@ -123,8 +123,21 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 	}
 
 	var booking models.Booking
+	if err := h.db.First(&booking, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch booking"})
+		return
+	}
+
 	if err := h.db.Model(&booking).Where("id = ?", id).Updates(&req).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update booking"})
+		return
+	}
+	if err := h.db.First(&booking, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated booking"})
 		return
 	}
 
@@ -134,8 +147,13 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 // CancelBooking cancels a booking
 func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", "cancelled").Error; err != nil {
+	result := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", "cancelled")
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel booking"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
 		return
 	}
 

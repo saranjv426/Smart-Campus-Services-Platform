@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"net/http"
 	"strings"
 	"testing"
@@ -37,6 +38,50 @@ func TestCreateBookingSetsPendingStatus(t *testing.T) {
 	if booking.Status != "pending" {
 		t.Fatalf("expected booking status pending, got %s", booking.Status)
 	}
+	if booking.UserID != user.ID || booking.ServiceID != service.ID || booking.Notes != "Need transportation" {
+		t.Fatalf("expected response body to include created booking details, got %+v", booking)
+	}
+}
+
+func TestCreateBookingReturnsBadRequestForMissingRequiredFields(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.POST("/bookings", handler.CreateBooking)
+
+	rec := performRequest(t, router, http.MethodPost, "/bookings", map[string]any{
+		"notes": "Missing user, service, and times",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	resp := decodeJSON[map[string]string](t, rec)
+	if resp["error"] == "" {
+		t.Fatalf("expected error response body, got %+v", resp)
+	}
+}
+
+func TestCreateBookingRejectsMalformedJSON(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.POST("/bookings", handler.CreateBooking)
+
+	req, err := http.NewRequest(http.MethodPost, "/bookings", bytes.NewBufferString("{"))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := performRawRequest(router, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
 }
 
 func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
@@ -58,6 +103,25 @@ func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
 	resp := decodeJSON[models.Booking](t, rec)
 	if resp.User.ID != user.ID || resp.Service.ID != service.ID {
 		t.Fatalf("expected preloaded user and service, got %+v", resp)
+	}
+}
+
+func TestGetBookingReturnsNotFoundForMissingBooking(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.GET("/bookings/:id", handler.GetBooking)
+
+	rec := performRequest(t, router, http.MethodGet, "/bookings/missing", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	resp := decodeJSON[map[string]string](t, rec)
+	if resp["error"] != "Booking not found" {
+		t.Fatalf("expected booking not found error, got %+v", resp)
 	}
 }
 
@@ -200,12 +264,67 @@ func TestUpdateBookingPersistsChanges(t *testing.T) {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
+	resp := decodeJSON[models.Booking](t, rec)
+	if resp.ID != booking.ID || resp.Notes != "Updated note" || resp.Status != "pending" {
+		t.Fatalf("expected response body to include updated booking, got %+v", resp)
+	}
+
 	var updated models.Booking
 	if err := db.First(&updated, "id = ?", booking.ID).Error; err != nil {
 		t.Fatalf("failed to reload booking: %v", err)
 	}
 	if updated.Notes != "Updated note" {
 		t.Fatalf("expected booking notes to be updated, got %s", updated.Notes)
+	}
+	if updated.Status != "pending" {
+		t.Fatalf("expected update to preserve booking status, got %s", updated.Status)
+	}
+}
+
+func TestUpdateBookingReturnsNotFoundForMissingBooking(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.PUT("/bookings/:id", handler.UpdateBooking)
+
+	now := time.Now().UTC()
+	rec := performRequest(t, router, http.MethodPut, "/bookings/missing", CreateBookingRequest{
+		UserID:    user.ID,
+		ServiceID: service.ID,
+		StartTime: now.Add(4 * time.Hour),
+		EndTime:   now.Add(5 * time.Hour),
+		Notes:     "Updated note",
+	})
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	resp := decodeJSON[map[string]string](t, rec)
+	if resp["error"] != "Booking not found" {
+		t.Fatalf("expected booking not found error, got %+v", resp)
+	}
+}
+
+func TestUpdateBookingReturnsBadRequestForInvalidPayload(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+	booking := createBookingFixture(t, db, user.ID, service.ID)
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.PUT("/bookings/:id", handler.UpdateBooking)
+
+	rec := performRequest(t, router, http.MethodPut, "/bookings/"+booking.ID, map[string]any{
+		"notes": "Missing required fields",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -231,5 +350,24 @@ func TestCancelBookingMarksStatusCancelled(t *testing.T) {
 	}
 	if updated.Status != "cancelled" {
 		t.Fatalf("expected booking status cancelled, got %s", updated.Status)
+	}
+}
+
+func TestCancelBookingReturnsNotFoundForMissingBooking(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.DELETE("/bookings/:id", handler.CancelBooking)
+
+	rec := performRequest(t, router, http.MethodDelete, "/bookings/missing", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	resp := decodeJSON[map[string]string](t, rec)
+	if resp["error"] != "Booking not found" {
+		t.Fatalf("expected booking not found error, got %+v", resp)
 	}
 }
