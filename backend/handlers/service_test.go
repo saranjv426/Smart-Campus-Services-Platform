@@ -74,7 +74,9 @@ func TestCreateServicePersistsRecord(t *testing.T) {
 
 func TestUpdateServicePersistsChanges(t *testing.T) {
 	db := setupTestDB(t)
-	service := createServiceFixture(t, db)
+	service := createServiceFixture(t, db, func(service *models.Service) {
+		service.IsActive = false
+	})
 
 	handler := NewServiceHandler(db)
 	router := gin.New()
@@ -84,7 +86,9 @@ func TestUpdateServicePersistsChanges(t *testing.T) {
 		Name:        "Updated Shuttle",
 		Description: "Updated description",
 		Category:    "transportation",
+		ImageURL:    "https://campus.edu/shuttle.png",
 		Location:    "West Hub",
+		Phone:       "555-0199",
 		Email:       "updated@campus.edu",
 		Hours:       "Weekdays",
 	})
@@ -94,7 +98,16 @@ func TestUpdateServicePersistsChanges(t *testing.T) {
 	}
 
 	resp := decodeJSON[models.Service](t, rec)
-	if resp.ID != service.ID || resp.Name != "Updated Shuttle" {
+	if resp.ID != service.ID ||
+		resp.Name != "Updated Shuttle" ||
+		resp.Description != "Updated description" ||
+		resp.Category != "transportation" ||
+		resp.ImageURL != "https://campus.edu/shuttle.png" ||
+		resp.Location != "West Hub" ||
+		resp.Phone != "555-0199" ||
+		resp.Email != "updated@campus.edu" ||
+		resp.Hours != "Weekdays" ||
+		resp.IsActive {
 		t.Fatalf("expected updated service in response, got %+v", resp)
 	}
 
@@ -103,8 +116,83 @@ func TestUpdateServicePersistsChanges(t *testing.T) {
 		t.Fatalf("failed to reload service: %v", err)
 	}
 
-	if updated.Name != "Updated Shuttle" {
-		t.Fatalf("expected service name to be updated, got %s", updated.Name)
+	if updated.Name != "Updated Shuttle" ||
+		updated.Description != "Updated description" ||
+		updated.Category != "transportation" ||
+		updated.ImageURL != "https://campus.edu/shuttle.png" ||
+		updated.Location != "West Hub" ||
+		updated.Phone != "555-0199" ||
+		updated.Email != "updated@campus.edu" ||
+		updated.Hours != "Weekdays" ||
+		updated.IsActive {
+		t.Fatalf("expected service fields to be updated and active flag preserved, got %+v", updated)
+	}
+}
+
+func TestUpdateServiceReturnsNotFoundForMissingService(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PUT("/services/:id", handler.UpdateService)
+
+	rec := performRequest(t, router, http.MethodPut, "/services/missing", CreateServiceRequest{
+		Name:        "Updated Shuttle",
+		Description: "Updated description",
+		Category:    "transportation",
+		Location:    "West Hub",
+		Email:       "updated@campus.edu",
+		Hours:       "Weekdays",
+	})
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestUpdateServiceReturnsBadRequestForInvalidPayload(t *testing.T) {
+	db := setupTestDB(t)
+	service := createServiceFixture(t, db)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PUT("/services/:id", handler.UpdateService)
+
+	rec := performRequest(t, router, http.MethodPut, "/services/"+service.ID, map[string]any{
+		"name": "Missing required fields",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var unchanged models.Service
+	if err := db.First(&unchanged, "id = ?", service.ID).Error; err != nil {
+		t.Fatalf("failed to reload service: %v", err)
+	}
+	if unchanged.Name != service.Name || unchanged.Description != service.Description {
+		t.Fatalf("expected invalid update to leave service unchanged, got %+v", unchanged)
+	}
+}
+
+func TestUpdateServiceRejectsMalformedJSON(t *testing.T) {
+	db := setupTestDB(t)
+	service := createServiceFixture(t, db)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.PUT("/services/:id", handler.UpdateService)
+
+	req, err := http.NewRequest(http.MethodPut, "/services/"+service.ID, bytes.NewBufferString("{"))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := performRawRequest(router, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
 	}
 }
 
@@ -233,6 +321,10 @@ func TestUpdateServiceActiveRejectsMalformedJSON(t *testing.T) {
 func TestDeleteServiceRemovesRecord(t *testing.T) {
 	db := setupTestDB(t)
 	service := createServiceFixture(t, db)
+	otherService := createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Dining Hall"
+		service.Category = "dining"
+	})
 
 	handler := NewServiceHandler(db)
 	router := gin.New()
@@ -250,6 +342,24 @@ func TestDeleteServiceRemovesRecord(t *testing.T) {
 	}
 	if count != 0 {
 		t.Fatalf("expected service to be deleted, found %d records", count)
+	}
+
+	if err := db.First(&models.Service{}, "id = ?", otherService.ID).Error; err != nil {
+		t.Fatalf("expected other services to remain after delete: %v", err)
+	}
+}
+
+func TestDeleteServiceReturnsNotFoundForMissingService(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.DELETE("/services/:id", handler.DeleteService)
+
+	rec := performRequest(t, router, http.MethodDelete, "/services/missing", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
 	}
 }
 

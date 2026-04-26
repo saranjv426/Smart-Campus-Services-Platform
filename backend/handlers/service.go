@@ -229,8 +229,13 @@ func (h *ServiceHandler) UpdateServiceActive(c *gin.Context) {
 // DeleteService deletes a service
 func (h *ServiceHandler) DeleteService(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.db.Delete(&models.Service{}, "id = ?", id).Error; err != nil {
+	result := h.db.Delete(&models.Service{}, "id = ?", id)
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete service"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Service not found"})
 		return
 	}
 
