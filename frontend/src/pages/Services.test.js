@@ -105,4 +105,147 @@ describe('Services Page Component', () => {
       expect(screen.getByText('Campus Center')).toBeInTheDocument();
     });
   });
+
+  test('searches services by name', async () => {
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    fireEvent.change(searchInput, { target: { value: 'Library' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+  });
+
+  test('searches services by description', async () => {
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    fireEvent.change(searchInput, { target: { value: 'dining' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Student Dining')).toBeInTheDocument();
+    });
+  });
+
+  test('clears search input and shows all services', async () => {
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    fireEvent.change(searchInput, { target: { value: 'Library' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    // Clear search
+    fireEvent.change(searchInput, { target: { value: '' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Student Dining')).toBeInTheDocument();
+    });
+  });
+
+  test('displays no results message when search returns empty', async () => {
+    axios.get.mockResolvedValue({ data: [] });
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText(/no services found|no results/i)).toBeInTheDocument();
+    });
+  });
+
+  test('handles API error gracefully', async () => {
+    axios.get.mockRejectedValueOnce(new Error('API Error'));
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText(/error|failed to load/i)).toBeInTheDocument();
+    });
+  });
+
+  test('filters by multiple categories sequentially', async () => {
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    // Filter by library
+    let libraryButton = screen.getByRole('button', { name: /Library/i });
+    fireEvent.click(libraryButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    // Change to dining filter
+    const diningButton = screen.getByRole('button', { name: /Dining/i });
+    fireEvent.click(diningButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Student Dining')).toBeInTheDocument();
+    });
+  });
+
+  test('clears filters and shows all services again', async () => {
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    // Apply filter
+    const libraryButton = screen.getByRole('button', { name: /Library/i });
+    fireEvent.click(libraryButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    // Clear filter by clicking All
+    const allButton = screen.getByRole('button', { name: /All/i });
+    fireEvent.click(allButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Student Dining')).toBeInTheDocument();
+    });
+  });
+
+  test('combines filter and search functionality', async () => {
+    renderServices();
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    // Apply library filter
+    const libraryButton = screen.getByRole('button', { name: /Library/i });
+    fireEvent.click(libraryButton);
+
+    // Also search
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    fireEvent.change(searchInput, { target: { value: 'Main' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+  });
+
+  test('displays loading state while fetching services', async () => {
+    axios.get.mockImplementation(() =>
+      new Promise(resolve => setTimeout(() => resolve({ data: mockServices }), 100))
+    );
+
+    renderServices();
+    expect(screen.getByText(/loading|fetching/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+  });
 });
