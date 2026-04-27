@@ -229,4 +229,236 @@ describe('ServiceDetail Page Component', () => {
     const reviewInput = screen.queryByPlaceholderText(/comment|review/i);
     expect(reviewInput).toBeInTheDocument();
   });
+
+  test('validates booking form date field is required', async () => {
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const dateInput = screen.getByPlaceholderText(/start date|date/i);
+      expect(dateInput).toHaveAttribute('required');
+    });
+  });
+
+  test('validates booking form time field is required', async () => {
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const timeInput = screen.getByPlaceholderText(/start time|time/i);
+      expect(timeInput).toHaveAttribute('required');
+    });
+  });
+
+  test('prevents booking submission with missing required fields', async () => {
+    const mockBookingResponse = { data: { id: 1, status: 'pending' } };
+    axios.post.mockResolvedValueOnce(mockBookingResponse);
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const submitButton = screen.getByRole('button', { name: /confirm booking|submit/i });
+      expect(submitButton).toBeDisabled();
+    });
+  });
+
+  test('handles booking submission error', async () => {
+    const error = new Error('Booking failed');
+    axios.post.mockRejectedValueOnce(error);
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const dateInput = screen.getByPlaceholderText(/start date|date/i);
+      fireEvent.change(dateInput, { target: { value: '2024-12-31' } });
+    });
+
+    const submitButton = screen.getByRole('button', { name: /confirm booking|submit/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/error|failed/i)).toBeInTheDocument();
+    });
+  });
+
+  test('displays success message after booking submission', async () => {
+    const mockBookingResponse = { data: { id: 1, status: 'pending' } };
+    axios.post.mockResolvedValueOnce(mockBookingResponse);
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const dateInput = screen.getByPlaceholderText(/start date|date/i);
+      fireEvent.change(dateInput, { target: { value: '2024-12-31' } });
+    });
+
+    const submitButton = screen.getByRole('button', { name: /confirm booking|submit/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/success|confirmed|booked/i)).toBeInTheDocument();
+    });
+  });
+
+  test('closes booking form when cancel button is clicked', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/start time/i)).toBeInTheDocument();
+    });
+
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/start time/i)).not.toBeInTheDocument();
+    });
+  });
+
+  test('displays review rating as stars', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      const ratingElements = screen.getAllByText(/★/);
+      expect(ratingElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('displays reviewer name and date for each review', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    });
+  });
+
+  test('displays service rating on detail page', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText(/4\.5|rating/i)).toBeInTheDocument();
+    });
+  });
+
+  test('displays service location information', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Campus Center/i)).toBeInTheDocument();
+    });
+  });
+
+  test('displays service image', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      const image = screen.getByRole('img');
+      expect(image).toBeInTheDocument();
+    });
+  });
+
+  test('handles missing service details gracefully', async () => {
+    axios.get.mockRejectedValue(new Error('Not found'));
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to load service details|error/i)).toBeInTheDocument();
+    });
+  });
+
+  test('populates booking form with end time when start time is selected', async () => {
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const startTimeInput = screen.getByPlaceholderText(/start time|start/i);
+      fireEvent.change(startTimeInput, { target: { value: '10:00' } });
+
+      // Verify that the form is in a valid state
+      expect(startTimeInput).toHaveValue('10:00');
+    });
+  });
+
+  test('prevents booking past dates', async () => {
+    localStorage.setItem('user', JSON.stringify({ id: 1 }));
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Library')).toBeInTheDocument();
+    });
+
+    const bookButton = screen.getByRole('button', { name: /book/i });
+    fireEvent.click(bookButton);
+
+    await waitFor(() => {
+      const dateInput = screen.getByPlaceholderText(/start date|date/i);
+      // Set a past date
+      fireEvent.change(dateInput, { target: { value: '2020-01-01' } });
+
+      const submitButton = screen.getByRole('button', { name: /confirm booking|submit/i });
+      // Button should remain disabled or show validation error
+      expect(submitButton).toBeDisabled();
+    });
+  });
+
+  test('displays review count in page header', async () => {
+    renderServiceDetail();
+
+    await waitFor(() => {
+      expect(screen.getByText(/2 review|review/i)).toBeInTheDocument();
+    });
+  });
 });

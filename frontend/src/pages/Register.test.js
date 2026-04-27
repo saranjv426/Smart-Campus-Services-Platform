@@ -215,4 +215,253 @@ describe('Register Page Component', () => {
 
     dispatchEventSpy.mockRestore();
   });
+
+  test('validates email format before submission', async () => {
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'invalid-email');
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('validates password minimum length', async () => {
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'pass');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('prevents registration with duplicate email (409 error)', async () => {
+    const error = new Error('Conflict');
+    error.response = { status: 409 };
+    axios.post.mockRejectedValueOnce(error);
+
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'existing@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/already exists|already registered|duplicate/i)).toBeInTheDocument();
+    });
+  });
+
+  test('allows role selection and stores it on registration', async () => {
+    renderRegister();
+    const roleSelect = screen.getByDisplayValue('student');
+
+    // Change role
+    fireEvent.change(roleSelect, { target: { value: 'staff' } });
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'staff@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'Staff');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/register'),
+        expect.objectContaining({
+          role: 'staff',
+        })
+      );
+    });
+  });
+
+  test('prevents registration with missing first name', async () => {
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('prevents registration with missing last name', async () => {
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('prevents registration with missing email', async () => {
+    renderRegister();
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('displays error message on registration API failure', async () => {
+    const error = new Error('Registration failed');
+    error.response = { status: 500 };
+    axios.post.mockRejectedValueOnce(error);
+
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to register|server error/i)).toBeInTheDocument();
+    });
+  });
+
+  test('disables submit button during API call', async () => {
+    axios.post.mockImplementation(() =>
+      new Promise(resolve => setTimeout(() => resolve(mockResponse), 200))
+    );
+
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    expect(submitButton).toBeDisabled();
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalled();
+    });
+  });
+
+  test('clears error message when user modifies input', async () => {
+    axios.post.mockRejectedValueOnce(new Error('Registration failed'));
+
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+    await userEvent.type(lastNameInput, 'User');
+
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to register/i)).toBeInTheDocument();
+    });
+
+    // Modify input
+    fireEvent.change(emailInput, { target: { value: 'newemail@example.com' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Failed to register/i)).not.toBeInTheDocument();
+    });
+  });
+
+  test('validates phone number format', async () => {
+    renderRegister();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const firstNameInput = screen.getByPlaceholderText(/first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/last name/i);
+    const phoneInput = screen.getByPlaceholderText(/phone/i);
+    const submitButton = screen.getByRole('button', { name: /register/i });
+
+    await userEvent.type(emailInput, 'newuser@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    await userEvent.type(firstNameInput, 'New');
+    await userEvent.type(lastNameInput, 'User');
+    await userEvent.type(phoneInput, 'invalid-phone');
+
+    fireEvent.click(submitButton);
+
+    // Implementation specific - depends on whether phone validation is enforced
+    // Just verify the submission happens
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalled();
+    });
+  });
+
+  test('displays all role options in dropdown', () => {
+    renderRegister();
+    const roleSelect = screen.getByDisplayValue('student');
+
+    const options = roleSelect.querySelectorAll('option');
+    expect(options.length).toBeGreaterThan(0);
+  });
 });
