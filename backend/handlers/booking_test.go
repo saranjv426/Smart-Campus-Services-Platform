@@ -67,6 +67,28 @@ func TestCreateBookingRequiresEndTime(t *testing.T) {
 	}
 }
 
+func TestCreateBookingRejectsEndTimeBeforeStartTime(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	start := time.Now().UTC().Add(2 * time.Hour)
+	rec := performRequest(t, router, http.MethodPost, "/bookings", CreateBookingRequest{
+		UserID:    user.ID,
+		ServiceID: service.ID,
+		StartTime: start,
+		EndTime:   start.Add(-time.Hour),
+		Notes:     "Invalid time range",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestCreateBookingCreatesNotification(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
@@ -175,6 +197,29 @@ func TestUpdateBookingPersistsChanges(t *testing.T) {
 	}
 	if updated.Notes != "Updated note" {
 		t.Fatalf("expected booking notes to be updated, got %s", updated.Notes)
+	}
+}
+
+func TestUpdateBookingRejectsEndTimeBeforeStartTime(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+	booking := createBookingFixture(t, db, user.ID, service.ID)
+
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	start := time.Now().UTC().Add(4 * time.Hour)
+	rec := performRequest(t, router, http.MethodPut, "/bookings/"+booking.ID, CreateBookingRequest{
+		UserID:    user.ID,
+		ServiceID: service.ID,
+		StartTime: start,
+		EndTime:   start.Add(-time.Hour),
+		Notes:     "Invalid update",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
 	}
 }
 

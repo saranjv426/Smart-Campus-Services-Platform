@@ -36,6 +36,10 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !req.EndTime.After(req.StartTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "endTime must be after startTime"})
+		return
+	}
 
 	booking := models.Booking{
 		UserID:    req.UserID,
@@ -103,6 +107,10 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !req.EndTime.After(req.StartTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "endTime must be after startTime"})
 		return
 	}
 
