@@ -76,6 +76,18 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 	c.JSON(http.StatusOK, booking)
 }
 
+// GetAllBookings returns all bookings
+func (h *BookingHandler) GetAllBookings(c *gin.Context) {
+	var bookings []models.Booking
+
+	if err := h.db.Preload("User").Preload("Service").Find(&bookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookings"})
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
+}
+
 // GetUserBookings returns all bookings for a user
 func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 	userId := c.Param("userId")
