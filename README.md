@@ -71,6 +71,11 @@ A comprehensive full-stack web application for managing campus services at the U
 
    Backend will be available at `http://localhost:8080`
 
+5. Run backend unit tests:
+   ```bash
+   go test ./...
+   ```
+
 ### Setup Frontend
 
 1. Navigate to frontend directory:
@@ -94,6 +99,16 @@ A comprehensive full-stack web application for managing campus services at the U
    ```
 
    Frontend will be available at `http://localhost:3000`
+
+5. Run frontend unit tests:
+   ```bash
+   npm test -- --watchAll=false
+   ```
+
+6. Run Cypress end-to-end tests:
+   ```bash
+   npm run cypress:open
+   ```
 
 ## API Endpoints
 
@@ -124,7 +139,7 @@ POST   /api/bookings         - Create booking
 GET    /api/bookings/:id     - Get booking details
 GET    /api/bookings/user/:userId - Get user bookings
 PUT    /api/bookings/:id     - Update booking
-DELETE /api/bookings/:id     - Cancel booking
+PATCH  /api/bookings/:id/status - Cancel booking with {"status":"cancelled"}
 ```
 
 ### Reviews

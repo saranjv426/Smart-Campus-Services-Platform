@@ -89,12 +89,31 @@ backend/
 - `DELETE /api/services/:id` - Delete service (Admin)
 - `GET /api/services/category/:category` - Get services by category
 
+`GET /api/services` supports:
+- `q` - case-insensitive search across service name and description
+- `category` - exact category filter, case-insensitive
+- `activeOnly` - set to `true` to return active services only
+- `limit` - page size from 1 to 200, default 100
+- `offset` - number of rows to skip, default 0
+- `sortBy` - `name`, `category`, `rating`, `createdAt`, or `updatedAt`
+- `sortOrder` - `asc` or `desc`
+
 ### Bookings
 - `POST /api/bookings` - Create new booking
 - `GET /api/bookings/:id` - Get booking by ID
 - `GET /api/bookings/user/:userId` - Get user's bookings
 - `PUT /api/bookings/:id` - Update booking
 - `PATCH /api/bookings/:id/status` - Cancel booking by updating status to cancelled
+
+Booking status updates accept this JSON body:
+
+```json
+{
+  "status": "cancelled"
+}
+```
+
+Creating a booking also creates an unread `booking` notification for the booking user.
 
 ### Reviews
 - `POST /api/reviews` - Create review
@@ -187,11 +206,21 @@ Creating a booking automatically generates an unread notification for the bookin
 
 ## Testing
 
-To test the API endpoints, you can use:
-- Postman
-- curl
-- Thunder Client
-- Insomnia
+Run all backend unit tests:
+
+```bash
+go test ./...
+```
+
+The backend test suite covers:
+- Authentication registration, login, duplicate email, invalid role, logout, and refresh handlers
+- Booking creation, validation, notification creation, lookup, user filtering, update, cancel success, invalid status, and missing booking paths
+- Service CRUD, category filtering, list search/filter/pagination behavior
+- Review creation, lookup, ownership delete, and rating recalculation
+- Notification creation, listing, and read status updates
+- User profile and router auth/public route behavior
+
+To manually test the API endpoints, you can use Postman, curl, Thunder Client, or Insomnia.
 
 Example:
 ```bash
