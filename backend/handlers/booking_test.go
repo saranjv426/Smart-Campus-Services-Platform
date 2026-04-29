@@ -84,6 +84,36 @@ func TestCreateBookingRejectsMalformedJSON(t *testing.T) {
 	}
 }
 
+func TestGetAllBookings(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+	createBookingFixture(t, db, user.ID, service.ID)
+	createBookingFixture(t, db, user.ID, service.ID, func(b *models.Booking) {
+		b.Status = "approved"
+	})
+
+	handler := NewBookingHandler(db)
+	router := gin.New()
+	router.GET("/bookings", handler.GetAllBookings)
+
+	rec := performRequest(t, router, http.MethodGet, "/bookings", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	bookings := decodeJSON[[]models.Booking](t, rec)
+	if len(bookings) != 2 {
+		t.Fatalf("expected 2 bookings, got %+v", bookings)
+	}
+	for _, booking := range bookings {
+		if booking.User.ID != user.ID || booking.Service.ID != service.ID {
+			t.Fatalf("expected user and service to be preloaded, got %+v", booking)
+		}
+	}
+}
+
 func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
@@ -106,7 +136,7 @@ func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
 	}
 }
 
-func TestGetBookingReturnsNotFoundForMissingBooking(t *testing.T) {
+func TestGetBookingNotFound(t *testing.T) {
 	db := setupTestDB(t)
 
 	handler := NewBookingHandler(db)
@@ -328,7 +358,7 @@ func TestUpdateBookingReturnsBadRequestForInvalidPayload(t *testing.T) {
 	}
 }
 
-func TestCancelBookingMarksStatusCancelled(t *testing.T) {
+func TestCancelBooking(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
 	service := createServiceFixture(t, db)

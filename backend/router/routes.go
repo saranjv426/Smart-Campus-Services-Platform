@@ -66,14 +66,16 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 
 	bookings := r.Group("/api/bookings")
 	{
-		bookings.GET("/:id", bookingHandlers.GetBooking)
+		bookings.GET("", bookingHandlers.GetAllBookings)
 		bookings.GET("/user/:userId", bookingHandlers.GetUserBookings)
+		bookings.GET("/:id", bookingHandlers.GetBooking)
 	}
 	bookingsProtected := r.Group("/api/bookings")
 	bookingsProtected.Use(authRequired)
 	{
 		bookingsProtected.POST("", bookingHandlers.CreateBooking)
 		bookingsProtected.PUT("/:id", bookingHandlers.UpdateBooking)
+		bookingsProtected.DELETE("/:id", bookingHandlers.CancelBooking)
 		bookingsProtected.PATCH("/:id/status", bookingHandlers.CancelBooking)
 	}
 
