@@ -55,7 +55,7 @@ func TestGetPendingBookingsReturnsStaffServiceBookings(t *testing.T) {
 }
 
 func TestGetAllBookingsForServiceReturnsAllStatuses(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	service := createServiceFixture(t, db)
 	staff := createUserFixture(t, db, func(u *models.User) {
 		u.Role = "staff"
@@ -73,7 +73,7 @@ func TestGetAllBookingsForServiceReturnsAllStatuses(t *testing.T) {
 	router := gin.New()
 	router.GET("/approval/staff/:staffId/all", handler.GetAllBookingsForService)
 
-	rec := performRequest(t, router, http.MethodGet, "/approval/staff/"+staff.ID+"/all", nil)
+	rec := testutil.PerformRequest(router, http.MethodGet, "/approval/staff/"+staff.ID+"/all", nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
@@ -129,7 +129,7 @@ func TestApproveBookingUpdatesStatusAndCreatesNotification(t *testing.T) {
 }
 
 func TestRejectBookingRequiresMatchingStaffService(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	service := createServiceFixture(t, db)
 	otherService := createServiceFixture(t, db, func(s *models.Service) {
 		s.Name = "Dining Hall"
@@ -146,11 +146,11 @@ func TestRejectBookingRequiresMatchingStaffService(t *testing.T) {
 	router := gin.New()
 	router.PUT("/approval/bookings/:id/reject", handler.RejectBooking)
 
-	rec := performRequest(t, router, http.MethodPut, "/approval/bookings/"+booking.ID+"/reject", ApprovalRequest{
+	rec := testutil.PerformRequest(router, http.MethodPut, "/approval/bookings/"+booking.ID+"/reject", testutil.MustMarshal(ApprovalRequest{
 		Status:        "rejected",
 		ApprovalNotes: "Wrong service owner",
 		StaffID:       staff.ID,
-	})
+	}))
 
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("expected status 403, got %d with body %s", rec.Code, rec.Body.String())
@@ -158,14 +158,14 @@ func TestRejectBookingRequiresMatchingStaffService(t *testing.T) {
 }
 
 func TestGetAllPendingBookingsRequiresAdmin(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	user := createUserFixture(t, db)
 
 	handler := NewApprovalHandler(db)
 	router := gin.New()
 	router.GET("/approval/admin/:userId/pending", handler.GetAllPendingBookings)
 
-	rec := performRequest(t, router, http.MethodGet, "/approval/admin/"+user.ID+"/pending", nil)
+	rec := testutil.PerformRequest(router, http.MethodGet, "/approval/admin/"+user.ID+"/pending", nil)
 
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("expected status 403, got %d with body %s", rec.Code, rec.Body.String())
@@ -173,7 +173,7 @@ func TestGetAllPendingBookingsRequiresAdmin(t *testing.T) {
 }
 
 func TestGetAllBookingsReturnsAdminView(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	admin := createUserFixture(t, db, func(u *models.User) {
 		u.Role = "admin"
 	})
@@ -185,7 +185,7 @@ func TestGetAllBookingsReturnsAdminView(t *testing.T) {
 	router := gin.New()
 	router.GET("/approval/admin/:userId/all", handler.GetAllBookings)
 
-	rec := performRequest(t, router, http.MethodGet, "/approval/admin/"+admin.ID+"/all", nil)
+	rec := testutil.PerformRequest(router, http.MethodGet, "/approval/admin/"+admin.ID+"/all", nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
@@ -198,7 +198,7 @@ func TestGetAllBookingsReturnsAdminView(t *testing.T) {
 }
 
 func TestAdminApproveBookingUpdatesStatus(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	admin := createUserFixture(t, db, func(u *models.User) {
 		u.Role = "admin"
 	})
@@ -210,10 +210,10 @@ func TestAdminApproveBookingUpdatesStatus(t *testing.T) {
 	router := gin.New()
 	router.PUT("/approval/admin/:userId/bookings/:id/approve", handler.AdminApproveBooking)
 
-	rec := performRequest(t, router, http.MethodPut, "/approval/admin/"+admin.ID+"/bookings/"+booking.ID+"/approve", ApprovalRequest{
+	rec := testutil.PerformRequest(router, http.MethodPut, "/approval/admin/"+admin.ID+"/bookings/"+booking.ID+"/approve", testutil.MustMarshal(ApprovalRequest{
 		Status:        "approved",
 		ApprovalNotes: "Admin approved",
-	})
+	}))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
@@ -229,7 +229,7 @@ func TestAdminApproveBookingUpdatesStatus(t *testing.T) {
 }
 
 func TestAdminRejectBookingUpdatesStatus(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	admin := createUserFixture(t, db, func(u *models.User) {
 		u.Role = "admin"
 	})
@@ -241,10 +241,10 @@ func TestAdminRejectBookingUpdatesStatus(t *testing.T) {
 	router := gin.New()
 	router.PUT("/approval/admin/:userId/bookings/:id/reject", handler.AdminRejectBooking)
 
-	rec := performRequest(t, router, http.MethodPut, "/approval/admin/"+admin.ID+"/bookings/"+booking.ID+"/reject", ApprovalRequest{
+	rec := testutil.PerformRequest(router, http.MethodPut, "/approval/admin/"+admin.ID+"/bookings/"+booking.ID+"/reject", testutil.MustMarshal(ApprovalRequest{
 		Status:        "rejected",
 		ApprovalNotes: "Admin rejected",
-	})
+	}))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
