@@ -84,6 +84,43 @@ func TestRegisterRejectsInvalidRole(t *testing.T) {
 	}
 }
 
+func TestRegisterInvalidEmail(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+	router := setupAuthTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodPost, "/register", map[string]any{
+		"email":     "not-an-email",
+		"password":  "secret123",
+		"firstName": "Sam",
+		"lastName":  "Student",
+		"phone":     "555-1000",
+		"role":      "student",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRegisterMissingPhone(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+	router := setupAuthTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodPost, "/register", map[string]any{
+		"email":     "student@campus.edu",
+		"password":  "secret123",
+		"firstName": "Sam",
+		"lastName":  "Student",
+		"role":      "student",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestLoginAuthenticatesUser(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db, func(user *models.User) {
@@ -129,7 +166,7 @@ func TestLoginRejectsInvalidPassword(t *testing.T) {
 	}
 }
 
-func TestLogoutReturnsSuccess(t *testing.T) {
+func TestLogoutSuccess(t *testing.T) {
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
 	router := setupAuthTestRouter(handler)
@@ -141,7 +178,7 @@ func TestLogoutReturnsSuccess(t *testing.T) {
 	}
 }
 
-func TestRefreshTokenReturnsPlaceholderToken(t *testing.T) {
+func TestRefreshTokenSuccess(t *testing.T) {
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
 	router := setupAuthTestRouter(handler)
