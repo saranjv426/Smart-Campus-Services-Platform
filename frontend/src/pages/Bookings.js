@@ -11,7 +11,7 @@ function Bookings() {
 
   useEffect(() => {
     fetchBookings();
-  }, [refreshKey]);
+  }, [filter, refreshKey]);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -30,7 +30,11 @@ function Bookings() {
         return;
       }
 
-      const response = await bookingAPI.getUserBookings(currentUser.id);
+      setLoading(true);
+      const response = await bookingAPI.getUserBookings(
+        currentUser.id,
+        filter === 'all' ? undefined : filter
+      );
       setBookings(response.data || []);
       setError(null);
     } catch (err) {
@@ -53,13 +57,6 @@ function Bookings() {
     }
   };
 
-  const normalizeStatus = (status) => {
-    if (status === 'completed') {
-      return 'approved';
-    }
-    return status;
-  };
-
   const getStatusLabel = (status) => {
     if (status === 'approved') {
       return 'Accepted';
@@ -74,12 +71,7 @@ function Bookings() {
     return getStatusLabel(status);
   };
 
-  const filteredBookings = bookings.filter((b) => {
-    const normalizedStatus = normalizeStatus(b.status);
-    return filter === 'all' ? true : normalizedStatus === filter;
-  });
-
-  const statuses = ['all', 'pending', 'approved', 'rejected', 'cancelled'];
+  const statuses = ['all', 'pending', 'approved', 'completed', 'rejected', 'cancelled'];
 
   return (
     <div className="bookings-page">
@@ -110,7 +102,7 @@ function Bookings() {
             onClick={() => setFilter(status)}
           >
             {getFilterLabel(status)}
-            {filter === status && ` (${filteredBookings.length})`}
+            {filter === status && ` (${bookings.length})`}
           </button>
         ))}
       </div>
@@ -120,15 +112,14 @@ function Bookings() {
 
       {!loading && !error && (
         <div className="bookings-list">
-          {filteredBookings.length > 0 ? (
-            filteredBookings.map(booking => {
-              const normalizedStatus = normalizeStatus(booking.status);
+          {bookings.length > 0 ? (
+            bookings.map(booking => {
               return (
-              <div key={booking.id} className={`booking-card ${normalizedStatus}`}>
+              <div key={booking.id} className={`booking-card ${booking.status}`}>
                 <div className="booking-header">
                   <h3>{booking.service?.name}</h3>
-                  <span className={`status-badge ${normalizedStatus}`}>
-                    {getStatusLabel(normalizedStatus)}
+                  <span className={`status-badge ${booking.status}`}>
+                    {getStatusLabel(booking.status)}
                   </span>
                 </div>
                 <div className="booking-details">
@@ -150,7 +141,7 @@ function Bookings() {
             )})
           ) : (
             <div className="no-bookings">
-              <p>No bookings found in this category</p>
+              <p>No bookings found for this status</p>
             </div>
           )}
         </div>

@@ -2,25 +2,33 @@
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
+
 import '@testing-library/jest-dom';
 
-// Mock axios globally
-jest.mock('axios');
-
-// Suppress console errors during tests (optional)
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render')
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
+jest.mock('axios', () => {
+  const mockAxiosInstance = {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    interceptors: {
+      request: {
+        use: jest.fn(),
+      },
+    },
   };
-});
 
-afterAll(() => {
-  console.error = originalError;
+  return {
+    create: jest.fn(() => mockAxiosInstance),
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    interceptors: {
+      request: {
+        use: jest.fn(),
+      },
+    },
+    __mockInstance: mockAxiosInstance,
+  };
 });

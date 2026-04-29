@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,14 @@ import (
 
 type BookingHandler struct {
 	db *gorm.DB
+}
+
+var allowedBookingStatuses = map[string]struct{}{
+	"pending":   {},
+	"approved":  {},
+	"rejected":  {},
+	"completed": {},
+	"cancelled": {},
 }
 
 func NewBookingHandler(db *gorm.DB) *BookingHandler {
@@ -25,10 +34,6 @@ type CreateBookingRequest struct {
 	StartTime time.Time `json:"startTime" binding:"required"`
 	EndTime   time.Time `json:"endTime" binding:"required"`
 	Notes     string    `json:"notes"`
-}
-
-type UpdateBookingStatusRequest struct {
-	Status string `json:"status" binding:"required,oneof=cancelled"`
 }
 
 // CreateBooking creates a new booking
@@ -57,18 +62,6 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
-	notification := models.Notification{
-		UserID:  booking.UserID,
-		Title:   "Booking Request Submitted",
-		Message: "Your booking request has been submitted and is pending approval.",
-		Type:    "booking",
-		IsRead:  false,
-	}
-	if err := h.db.Create(&notification).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create booking notification"})
-		return
-	}
-
 	c.JSON(http.StatusCreated, booking)
 }
 
@@ -89,17 +82,52 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 	c.JSON(http.StatusOK, booking)
 }
 
-// GetUserBookings returns all bookings for a user
-func (h *BookingHandler) GetUserBookings(c *gin.Context) {
-	userId := c.Param("userId")
+// GetAllBookings returns all bookings
+func (h *BookingHandler) GetAllBookings(c *gin.Context) {
 	var bookings []models.Booking
 
-	if err := h.db.Preload("Service").Where("user_id = ?", userId).Find(&bookings).Error; err != nil {
+	if err := h.db.Preload("User").Preload("Service").Find(&bookings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookings"})
 		return
 	}
 
 	c.JSON(http.StatusOK, bookings)
+}
+
+// GetUserBookings returns all bookings for a user
+func (h *BookingHandler) GetUserBookings(c *gin.Context) {
+	userId := c.Param("userId")
+	status := normalizeBookingStatus(c.Query("status"))
+	var bookings []models.Booking
+
+	query := h.db.Preload("Service").Where("user_id = ?", userId)
+
+	if status != "" {
+		if !isAllowedBookingStatus(status) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid status. Supported statuses: pending, approved, rejected, completed, cancelled",
+			})
+			return
+		}
+
+		query = query.Where("status = ?", status)
+	}
+
+	if err := query.Find(&bookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookings"})
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
+}
+
+func normalizeBookingStatus(status string) string {
+	return strings.ToLower(strings.TrimSpace(status))
+}
+
+func isAllowedBookingStatus(status string) bool {
+	_, ok := allowedBookingStatuses[status]
+	return ok
 }
 
 // UpdateBooking updates a booking
@@ -117,8 +145,21 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 	}
 
 	var booking models.Booking
+	if err := h.db.First(&booking, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch booking"})
+		return
+	}
+
 	if err := h.db.Model(&booking).Where("id = ?", id).Updates(&req).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update booking"})
+		return
+	}
+	if err := h.db.First(&booking, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated booking"})
 		return
 	}
 
@@ -128,18 +169,7 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 // CancelBooking cancels a booking
 func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	id := c.Param("id")
-	req := UpdateBookingStatusRequest{Status: "cancelled"}
-	if c.Request.Method != http.MethodDelete {
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-	} else if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	result := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", req.Status)
+	result := h.db.Model(&models.Booking{}).Where("id = ?", id).Update("status", "cancelled")
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel booking"})
 		return

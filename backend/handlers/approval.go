@@ -24,6 +24,17 @@ type ApprovalRequest struct {
 	StaffID       string `json:"staffId"`
 }
 
+func (h *ApprovalHandler) createBookingNotification(userID, title, message, notificationType string) {
+	notification := models.Notification{
+		UserID:  userID,
+		Title:   title,
+		Message: message,
+		Type:    notificationType,
+		IsRead:  false,
+	}
+	h.db.Create(&notification)
+}
+
 // GetPendingBookings returns all pending bookings for a staff member's service
 func (h *ApprovalHandler) GetPendingBookings(c *gin.Context) {
 	staffID := c.Param("staffId")
@@ -134,15 +145,12 @@ func (h *ApprovalHandler) ApproveBooking(c *gin.Context) {
 		return
 	}
 
-	// Create notification for student
-	notification := models.Notification{
-		UserID:  booking.UserID,
-		Title:   "Booking Approved",
-		Message: "Your booking for " + booking.Service.Name + " has been approved. Approval notes: " + req.ApprovalNotes,
-		Type:    "booking_approval",
-		IsRead:  false,
-	}
-	h.db.Create(&notification)
+	h.createBookingNotification(
+		booking.UserID,
+		"Booking Approved",
+		"Your booking for "+booking.Service.Name+" has been approved. Approval notes: "+req.ApprovalNotes,
+		"booking_approval",
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking approved successfully", "booking": booking})
 }
@@ -195,15 +203,12 @@ func (h *ApprovalHandler) RejectBooking(c *gin.Context) {
 		return
 	}
 
-	// Create notification for student
-	notification := models.Notification{
-		UserID:  booking.UserID,
-		Title:   "Booking Rejected",
-		Message: "Your booking for " + booking.Service.Name + " has been rejected. Reason: " + req.ApprovalNotes,
-		Type:    "booking_rejection",
-		IsRead:  false,
-	}
-	h.db.Create(&notification)
+	h.createBookingNotification(
+		booking.UserID,
+		"Booking Rejected",
+		"Your booking for "+booking.Service.Name+" has been rejected. Reason: "+req.ApprovalNotes,
+		"booking_rejection",
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking rejected successfully", "booking": booking})
 }
@@ -299,15 +304,12 @@ func (h *ApprovalHandler) AdminApproveBooking(c *gin.Context) {
 	// Reload booking with updated data
 	h.db.Preload("Service").First(&booking, "id = ?", bookingID)
 
-	// Create notification for student
-	notification := models.Notification{
-		UserID:  booking.UserID,
-		Title:   "Booking Approved",
-		Message: "Your booking for " + booking.Service.Name + " has been approved by admin.",
-		Type:    "booking_approval",
-		IsRead:  false,
-	}
-	h.db.Create(&notification)
+	h.createBookingNotification(
+		booking.UserID,
+		"Booking Approved",
+		"Your booking for "+booking.Service.Name+" has been approved by admin.",
+		"booking_approval",
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking approved successfully", "booking": booking})
 }
@@ -352,15 +354,12 @@ func (h *ApprovalHandler) AdminRejectBooking(c *gin.Context) {
 	// Reload booking with updated data
 	h.db.Preload("Service").First(&booking, "id = ?", bookingID)
 
-	// Create notification for student
-	notification := models.Notification{
-		UserID:  booking.UserID,
-		Title:   "Booking Rejected",
-		Message: "Your booking for " + booking.Service.Name + " has been rejected by admin. Reason: " + req.ApprovalNotes,
-		Type:    "booking_rejection",
-		IsRead:  false,
-	}
-	h.db.Create(&notification)
+	h.createBookingNotification(
+		booking.UserID,
+		"Booking Rejected",
+		"Your booking for "+booking.Service.Name+" has been rejected by admin. Reason: "+req.ApprovalNotes,
+		"booking_rejection",
+	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking rejected successfully", "booking": booking})
 }

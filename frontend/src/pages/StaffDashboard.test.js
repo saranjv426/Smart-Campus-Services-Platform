@@ -1,3 +1,4 @@
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
@@ -20,6 +21,8 @@ jest.mock('react-router-dom', () => ({
 }));
 
 describe('StaffDashboard Page Component', () => {
+  let consoleErrorSpy;
+
   const mockStaff = {
     id: 1,
     firstName: 'Staff',
@@ -78,12 +81,18 @@ describe('StaffDashboard Page Component', () => {
     localStorage.clear();
     mockNavigate.mockClear();
 
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     localStorage.setItem('token', 'mock-token');
     localStorage.setItem('user', JSON.stringify(mockStaff));
 
     approvalAPI.getPendingBookingsByStaff.mockResolvedValue(mockBookings);
     approvalAPI.approveBooking.mockResolvedValue({ data: { success: true } });
     approvalAPI.rejectBooking.mockResolvedValue({ data: { success: true } });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   test('redirects to login if no token', async () => {
@@ -136,69 +145,73 @@ describe('StaffDashboard Page Component', () => {
   });
 
   test('opens approve modal when approve button is clicked', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
 
-    expect(await screen.findByText('Approve Booking')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Approve Booking' })
+    ).toBeInTheDocument();
+
     expect(
       screen.getByPlaceholderText(/Add any notes about this approval or rejection/i)
     ).toBeInTheDocument();
   });
 
   test('opens reject modal when reject button is clicked', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
 
-    expect(await screen.findByText('Reject Booking')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Reject Booking' })
+    ).toBeInTheDocument();
   });
 
   test('allows user to type notes in modal', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
 
     const textarea = await screen.findByPlaceholderText(
       /Add any notes about this approval or rejection/i
     );
 
-    await user.type(textarea, 'Approved by staff');
+    await userEvent.type(textarea, 'Approved by staff');
 
     expect(textarea).toHaveValue('Approved by staff');
   });
 
   test('submits approval action successfully', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
 
     const textarea = await screen.findByPlaceholderText(
       /Add any notes about this approval or rejection/i
     );
-    await user.type(textarea, 'Looks good');
+    await userEvent.type(textarea, 'Looks good');
 
-    await user.click(screen.getByRole('button', { name: 'Approve Booking' }));
+    const approveSubmitButton = await screen.findByRole('button', {
+      name: 'Approve Booking',
+    });
+    await userEvent.click(approveSubmitButton);
 
     await waitFor(() => {
       expect(approvalAPI.approveBooking).toHaveBeenCalledWith(1, {
@@ -214,21 +227,23 @@ describe('StaffDashboard Page Component', () => {
   });
 
   test('submits rejection action successfully', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
 
     const textarea = await screen.findByPlaceholderText(
       /Add any notes about this approval or rejection/i
     );
-    await user.type(textarea, 'Conflicting schedule');
+    await userEvent.type(textarea, 'Conflicting schedule');
 
-    await user.click(screen.getByRole('button', { name: 'Reject Booking' }));
+    const rejectSubmitButton = await screen.findByRole('button', {
+      name: 'Reject Booking',
+    });
+    await userEvent.click(rejectSubmitButton);
 
     await waitFor(() => {
       expect(approvalAPI.rejectBooking).toHaveBeenCalledWith(1, {
@@ -240,45 +255,50 @@ describe('StaffDashboard Page Component', () => {
   });
 
   test('closes modal when cancel button is clicked', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
 
-    expect(await screen.findByText('Approve Booking')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Approve Booking' })
+    ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => {
-      expect(screen.queryByText('Approve Booking')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('heading', { name: 'Approve Booking' })
+      ).not.toBeInTheDocument();
     });
   });
 
   test('closes modal when overlay is clicked', async () => {
-    const user = userEvent.setup();
     renderStaffDashboard();
 
     await waitFor(() => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
 
-    expect(await screen.findByText('Approve Booking')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Approve Booking' })
+    ).toBeInTheDocument();
 
-    await user.click(screen.getByTestId('booking-action-modal-overlay'));
+    await userEvent.click(screen.getByTestId('booking-action-modal-overlay'));
 
     await waitFor(() => {
-      expect(screen.queryByText('Approve Booking')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('heading', { name: 'Approve Booking' })
+      ).not.toBeInTheDocument();
     });
   });
 
   test('shows error message if approval submission fails', async () => {
-    const user = userEvent.setup();
     approvalAPI.approveBooking.mockRejectedValueOnce({
       response: {
         data: {
@@ -293,16 +313,19 @@ describe('StaffDashboard Page Component', () => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
-    await user.click(screen.getByRole('button', { name: 'Approve Booking' }));
+    await userEvent.click(screen.getAllByRole('button', { name: 'Approve' })[0]);
+
+    const approveSubmitButton = await screen.findByRole('button', {
+      name: 'Approve Booking',
+    });
+    await userEvent.click(approveSubmitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to approve booking')).toBeInTheDocument();
+      expect(screen.getByText(/Failed to approve booking/i)).toBeInTheDocument();
     });
   });
 
   test('shows error message if rejection submission fails', async () => {
-    const user = userEvent.setup();
     approvalAPI.rejectBooking.mockRejectedValueOnce({
       response: {
         data: {
@@ -317,11 +340,15 @@ describe('StaffDashboard Page Component', () => {
       expect(screen.getByText('Main Library')).toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
-    await user.click(screen.getByRole('button', { name: 'Reject Booking' }));
+    await userEvent.click(screen.getAllByRole('button', { name: 'Reject' })[0]);
+
+    const rejectSubmitButton = await screen.findByRole('button', {
+      name: 'Reject Booking',
+    });
+    await userEvent.click(rejectSubmitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to reject booking')).toBeInTheDocument();
+      expect(screen.getByText(/Failed to reject booking/i)).toBeInTheDocument();
     });
   });
 });

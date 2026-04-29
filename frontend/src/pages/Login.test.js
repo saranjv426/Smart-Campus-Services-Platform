@@ -162,4 +162,173 @@ describe('Login Page Component', () => {
 
     dispatchEventSpy.mockRestore();
   });
+
+  test('prevents login submission with empty email', async () => {
+    renderLogin();
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('prevents login submission with empty password', async () => {
+    renderLogin();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'test@example.com');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('validates email format before submission', async () => {
+    renderLogin();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'invalid-email');
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(axios.post).not.toHaveBeenCalled();
+    });
+  });
+
+  test('displays error message on 400 API error', async () => {
+    const error = new Error('Bad Request');
+    error.response = { status: 400 };
+    axios.post.mockRejectedValueOnce(error);
+    renderLogin();
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'test@example.com');
+    await userEvent.type(passwordInput, 'wrongpassword');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Invalid email or password/i)).toBeInTheDocument();
+    });
+  });
+
+  test('displays error message on 500 API error', async () => {
+    const error = new Error('Server Error');
+    error.response = { status: 500 };
+    axios.post.mockRejectedValueOnce(error);
+    renderLogin();
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'test@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Server error|something went wrong/i)).toBeInTheDocument();
+    });
+  });
+
+  test('disables submit button during API call', async () => {
+    axios.post.mockImplementation(() =>
+      new Promise(resolve => setTimeout(() => resolve(mockResponse), 200))
+    );
+
+    renderLogin();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'test@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    // Button should be disabled immediately after click
+    expect(submitButton).toBeDisabled();
+
+    await waitFor(() => {
+      expect(axios.post).toHaveBeenCalled();
+    });
+  });
+
+  test('clears error message when user modifies input', async () => {
+    axios.post.mockRejectedValueOnce(new Error('Invalid credentials'));
+    renderLogin();
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'test@example.com');
+    await userEvent.type(passwordInput, 'wrongpassword');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Invalid email or password/i)).toBeInTheDocument();
+    });
+
+    // Modify input
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Invalid email or password/i)).not.toBeInTheDocument();
+    });
+  });
+
+  test('stores user role in localStorage on successful login', async () => {
+    const staffResponse = {
+      data: {
+        token: 'mock-token-123',
+        id: 2,
+        email: 'staff@example.com',
+        firstName: 'Staff',
+        role: 'staff',
+      },
+    };
+    axios.post.mockResolvedValue(staffResponse);
+
+    renderLogin();
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'staff@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      expect(userData.role).toBe('staff');
+    });
+  });
+
+  test('handles network error gracefully', async () => {
+    axios.post.mockRejectedValueOnce(new Error('Network Error'));
+    renderLogin();
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /login/i });
+
+    await userEvent.type(emailInput, 'test@example.com');
+    await userEvent.type(passwordInput, 'password123');
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Network|connection|error/i)).toBeInTheDocument();
+    });
+  });
 });

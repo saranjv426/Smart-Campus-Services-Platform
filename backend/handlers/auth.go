@@ -42,6 +42,10 @@ type AuthResponse struct {
 	Token     string `json:"token"`
 }
 
+func generateAuthToken(user models.User) string {
+	return user.ID + "|" + user.Role + "|" + user.ServiceID
+}
+
 // Register creates a new user account
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
@@ -81,7 +85,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Phone:     user.Phone,
 		Role:      user.Role,
 		ServiceID: user.ServiceID,
-		Token:     "token-here", // In production, generate JWT
+		Token:     generateAuthToken(user), // In production, generate JWT
 	})
 }
 
@@ -120,7 +124,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		Phone:     user.Phone,
 		Role:      user.Role,
 		ServiceID: user.ServiceID,
-		Token:     "token-here", // In production, generate JWT
+		Token:     generateAuthToken(user), // In production, generate JWT
 	})
 }
 
@@ -132,5 +136,17 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 // RefreshToken refreshes user token
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"token": "new-token-here"})
+	userID := c.GetString("userID")
+	role := c.GetString("role")
+	serviceID := c.GetString("serviceID")
+	if userID == "" || role == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unable to refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": generateAuthToken(models.User{
+		ID:        userID,
+		Role:      role,
+		ServiceID: serviceID,
+	})})
 }

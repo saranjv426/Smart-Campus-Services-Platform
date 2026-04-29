@@ -66,6 +66,12 @@ func performRequest(t *testing.T, router *gin.Engine, method, path string, body 
 	return rec
 }
 
+func performRawRequest(router *gin.Engine, req *http.Request) *httptest.ResponseRecorder {
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	return rec
+}
+
 func decodeJSON[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
 	t.Helper()
 
