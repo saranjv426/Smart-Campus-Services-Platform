@@ -55,7 +55,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	result := h.db.Where("LOWER(email) = LOWER(?)", req.Email).First(&existingUser)
 	if result.Error == nil {
 		// User exists
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already registered"})
 		return
 	}
 
