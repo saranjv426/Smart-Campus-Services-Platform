@@ -33,6 +33,81 @@ func TestListServicesReturnsAllServices(t *testing.T) {
 	}
 }
 
+func TestListServicesSupportsSearchCategoryActiveAndSorting(t *testing.T) {
+	db := setupTestDB(t)
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Campus Shuttle"
+		service.Description = "Evening transportation across campus"
+		service.Category = "transportation"
+		service.Rating = 3.5
+	})
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Late Night Shuttle"
+		service.Description = "Transportation after library hours"
+		service.Category = "transportation"
+		service.Rating = 4.8
+	})
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Dining Hall"
+		service.Description = "Meal plan support"
+		service.Category = "dining"
+		service.Rating = 4.1
+	})
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Inactive Shuttle"
+		service.Description = "Old transportation option"
+		service.Category = "transportation"
+		service.Rating = 5.0
+		service.IsActive = false
+	})
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.GET("/services", handler.ListServices)
+
+	rec := performRequest(t, router, http.MethodGet, "/services?q=shuttle&category=transportation&activeOnly=true&sortBy=rating&sortOrder=desc", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	services := decodeJSON[[]models.Service](t, rec)
+	if len(services) != 2 {
+		t.Fatalf("expected 2 active transportation shuttle services, got %d: %+v", len(services), services)
+	}
+	if services[0].Name != "Late Night Shuttle" || services[1].Name != "Campus Shuttle" {
+		t.Fatalf("expected services sorted by rating desc, got %+v", services)
+	}
+}
+
+func TestListServicesBoundsLimitAndOffset(t *testing.T) {
+	db := setupTestDB(t)
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Alpha Service"
+	})
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Beta Service"
+	})
+	createServiceFixture(t, db, func(service *models.Service) {
+		service.Name = "Gamma Service"
+	})
+
+	handler := NewServiceHandler(db)
+	router := gin.New()
+	router.GET("/services", handler.ListServices)
+
+	rec := performRequest(t, router, http.MethodGet, "/services?limit=1&offset=1&sortBy=name&sortOrder=asc", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	services := decodeJSON[[]models.Service](t, rec)
+	if len(services) != 1 || services[0].Name != "Beta Service" {
+		t.Fatalf("expected the second alphabetic service, got %+v", services)
+	}
+}
+
 func TestGetServiceReturnsNotFoundForMissingService(t *testing.T) {
 	db := setupTestDB(t)
 	handler := NewServiceHandler(db)

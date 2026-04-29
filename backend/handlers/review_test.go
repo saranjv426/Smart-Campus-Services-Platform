@@ -38,6 +38,27 @@ func TestCreateReviewPersistsRecordAndUpdatesServiceRating(t *testing.T) {
 	}
 }
 
+func TestCreateReviewRejectsRatingOutsideAllowedRange(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+
+	handler := NewReviewHandler(db)
+	router := gin.New()
+	router.POST("/reviews", handler.CreateReview)
+
+	rec := performRequest(t, router, http.MethodPost, "/reviews", CreateReviewRequest{
+		UserID:    user.ID,
+		ServiceID: service.ID,
+		Rating:    6,
+		Comment:   "Rating should be between one and five",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestGetServiceReviewsReturnsReviewsForService(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
