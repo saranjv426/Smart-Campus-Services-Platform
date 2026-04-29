@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -123,8 +124,50 @@ func TestApproveBookingUpdatesStatusAndCreatesNotification(t *testing.T) {
 	if len(notifications) != 1 {
 		t.Fatalf("expected 1 notification, got %d", len(notifications))
 	}
-	if notifications[0].Title != "Booking Approved" || notifications[0].Type != "booking_approval" {
-		t.Fatalf("expected booking approval notification, got %+v", notifications[0])
+	if notifications[0].Type != "booking_approval" || notifications[0].Title != "Booking Approved" {
+		t.Fatalf("unexpected notification stored: %+v", notifications[0])
+	}
+	if !strings.Contains(notifications[0].Message, "See you soon") {
+		t.Fatalf("expected notification message to include approval notes, got %q", notifications[0].Message)
+	}
+}
+
+func TestRejectBookingCreatesNotification(t *testing.T) {
+	db := setupTestDB(t)
+	service := createServiceFixture(t, db)
+	staff := createUserFixture(t, db, func(u *models.User) {
+		u.Role = "staff"
+		u.ServiceID = service.ID
+	})
+	user := createUserFixture(t, db)
+	booking := createBookingFixture(t, db, user.ID, service.ID)
+
+	handler := NewApprovalHandler(db)
+	router := gin.New()
+	router.PUT("/approval/bookings/:id/reject", handler.RejectBooking)
+
+	rec := performRequest(t, router, http.MethodPut, "/approval/bookings/"+booking.ID+"/reject", ApprovalRequest{
+		Status:        "rejected",
+		ApprovalNotes: "Missing details",
+		StaffID:       staff.ID,
+	})
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var notifications []models.Notification
+	if err := db.Where("user_id = ?", user.ID).Find(&notifications).Error; err != nil {
+		t.Fatalf("failed to load notifications: %v", err)
+	}
+	if len(notifications) != 1 {
+		t.Fatalf("expected 1 notification, got %d", len(notifications))
+	}
+	if notifications[0].Type != "booking_rejection" || notifications[0].Title != "Booking Rejected" {
+		t.Fatalf("unexpected notification stored: %+v", notifications[0])
+	}
+	if !strings.Contains(notifications[0].Message, "Missing details") {
+		t.Fatalf("expected notification message to include rejection reason, got %q", notifications[0].Message)
 	}
 }
 
@@ -226,6 +269,20 @@ func TestAdminApproveBookingUpdatesStatus(t *testing.T) {
 	if updated.Status != "approved" || updated.ApprovedBy != admin.ID {
 		t.Fatalf("expected admin-approved booking, got %+v", updated)
 	}
+
+	var notifications []models.Notification
+	if err := db.Where("user_id = ?", user.ID).Find(&notifications).Error; err != nil {
+		t.Fatalf("failed to load notifications: %v", err)
+	}
+	if len(notifications) != 1 {
+		t.Fatalf("expected 1 notification, got %d", len(notifications))
+	}
+	if notifications[0].Type != "booking_approval" || notifications[0].Title != "Booking Approved" {
+		t.Fatalf("unexpected notification stored: %+v", notifications[0])
+	}
+	if !strings.Contains(notifications[0].Message, "approved by admin") {
+		t.Fatalf("expected admin approval wording in notification, got %q", notifications[0].Message)
+	}
 }
 
 func TestAdminRejectBookingUpdatesStatus(t *testing.T) {
@@ -256,5 +313,19 @@ func TestAdminRejectBookingUpdatesStatus(t *testing.T) {
 	}
 	if updated.Status != "rejected" || updated.ApprovedBy != admin.ID {
 		t.Fatalf("expected admin-rejected booking, got %+v", updated)
+	}
+
+	var notifications []models.Notification
+	if err := db.Where("user_id = ?", user.ID).Find(&notifications).Error; err != nil {
+		t.Fatalf("failed to load notifications: %v", err)
+	}
+	if len(notifications) != 1 {
+		t.Fatalf("expected 1 notification, got %d", len(notifications))
+	}
+	if notifications[0].Type != "booking_rejection" || notifications[0].Title != "Booking Rejected" {
+		t.Fatalf("unexpected notification stored: %+v", notifications[0])
+	}
+	if !strings.Contains(notifications[0].Message, "Admin rejected") {
+		t.Fatalf("expected rejection reason in notification, got %q", notifications[0].Message)
 	}
 }

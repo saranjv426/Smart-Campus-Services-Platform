@@ -6,22 +6,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"smart-campus-services/middleware"
 	"smart-campus-services/models"
+	"smart-campus-services/validation"
 )
 
-func setupAuthTestRouter(dbHandler *AuthHandler) *gin.Engine {
-	router := gin.New()
-	router.POST("/register", dbHandler.Register)
-	router.POST("/login", dbHandler.Login)
-	router.POST("/logout", dbHandler.Logout)
-	router.POST("/refresh", dbHandler.RefreshToken)
-	return router
+func setupAuthHandlerTest(t *testing.T) (*gin.Engine, *AuthHandler) {
+	t.Helper()
+
+	if err := validation.Init(); err != nil {
+		t.Fatalf("failed to initialize validator: %v", err)
+	}
+
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+	return gin.New(), handler
 }
 
 func TestRegisterCreatesUser(t *testing.T) {
-	db := setupTestDB(t)
-	handler := NewAuthHandler(db)
-	router := setupAuthTestRouter(handler)
+	router, handler := setupAuthHandlerTest(t)
+	router.POST("/register", handler.Register)
 
 	rec := performRequest(t, router, http.MethodPost, "/register", RegisterRequest{
 		Email:     "student@campus.edu",
@@ -36,20 +40,25 @@ func TestRegisterCreatesUser(t *testing.T) {
 		t.Fatalf("expected status 201, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
-	var user models.User
-	if err := db.Where("email = ?", "student@campus.edu").First(&user).Error; err != nil {
-		t.Fatalf("expected user to be persisted: %v", err)
+	resp := decodeJSON[AuthResponse](t, rec)
+	if resp.Email != "student@campus.edu" || resp.Role != "student" || resp.Token == "" {
+		t.Fatalf("expected auth response with created user details, got %+v", resp)
 	}
 }
 
 func TestRegisterRejectsDuplicateEmail(t *testing.T) {
+	if err := validation.Init(); err != nil {
+		t.Fatalf("failed to initialize validator: %v", err)
+	}
+
 	db := setupTestDB(t)
 	createUserFixture(t, db, func(user *models.User) {
 		user.Email = "student@campus.edu"
 	})
 
 	handler := NewAuthHandler(db)
-	router := setupAuthTestRouter(handler)
+	router := gin.New()
+	router.POST("/register", handler.Register)
 
 	rec := performRequest(t, router, http.MethodPost, "/register", RegisterRequest{
 		Email:     "student@campus.edu",
@@ -122,6 +131,10 @@ func TestRegisterMissingPhone(t *testing.T) {
 }
 
 func TestLoginAuthenticatesUser(t *testing.T) {
+	if err := validation.Init(); err != nil {
+		t.Fatalf("failed to initialize validator: %v", err)
+	}
+
 	db := setupTestDB(t)
 	user := createUserFixture(t, db, func(user *models.User) {
 		user.Email = "student@campus.edu"
@@ -141,12 +154,16 @@ func TestLoginAuthenticatesUser(t *testing.T) {
 	}
 
 	resp := decodeJSON[AuthResponse](t, rec)
-	if resp.ID != user.ID {
-		t.Fatalf("expected response ID %s, got %s", user.ID, resp.ID)
+	if resp.ID != user.ID || resp.Email != user.Email || resp.Token == "" {
+		t.Fatalf("expected authenticated user in response, got %+v", resp)
 	}
 }
 
 func TestLoginRejectsInvalidPassword(t *testing.T) {
+	if err := validation.Init(); err != nil {
+		t.Fatalf("failed to initialize validator: %v", err)
+	}
+
 	db := setupTestDB(t)
 	createUserFixture(t, db, func(user *models.User) {
 		user.Email = "student@campus.edu"
@@ -166,7 +183,11 @@ func TestLoginRejectsInvalidPassword(t *testing.T) {
 	}
 }
 
-func TestLogoutSuccess(t *testing.T) {
+func TestLogoutReturnsSuccess(t *testing.T) {
+	if err := validation.Init(); err != nil {
+		t.Fatalf("failed to initialize validator: %v", err)
+	}
+
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
 	router := setupAuthTestRouter(handler)
@@ -178,14 +199,39 @@ func TestLogoutSuccess(t *testing.T) {
 	}
 }
 
-func TestRefreshTokenSuccess(t *testing.T) {
+func TestRefreshTokenReturnsStructuredToken(t *testing.T) {
+	if err := validation.Init(); err != nil {
+		t.Fatalf("failed to initialize validator: %v", err)
+	}
+
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
-	router := setupAuthTestRouter(handler)
+	user := createUserFixture(t, db, func(user *models.User) {
+		user.Role = "staff"
+		user.ServiceID = "service-123"
+	})
+
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", user.ID)
+		c.Set("role", user.Role)
+		c.Set("serviceID", user.ServiceID)
+		c.Next()
+	})
+	router.POST("/refresh", handler.RefreshToken)
 
 	rec := performRequest(t, router, http.MethodPost, "/refresh", nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	body := decodeJSON[map[string]string](t, rec)
+	claims, ok := middleware.ParseTokenClaims(body["token"])
+	if !ok {
+		t.Fatalf("expected refresh token to be parseable, got %q", body["token"])
+	}
+	if claims.UserID != user.ID || claims.Role != user.Role || claims.ServiceID != user.ServiceID {
+		t.Fatalf("unexpected refresh token claims: %+v", claims)
 	}
 }

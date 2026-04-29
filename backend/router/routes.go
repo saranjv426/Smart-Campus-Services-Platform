@@ -18,6 +18,8 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	userHandlers := handlers.NewUserHandler(db)
 	approvalHandlers := handlers.NewApprovalHandler(db)
 	authRequired := middleware.AuthRequired()
+	adminOnly := middleware.RequireRoles("admin")
+	staffOnly := middleware.RequireRoles("staff")
 
 	auth := r.Group("/api/auth")
 	{
@@ -41,6 +43,11 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		usersProtected.PUT("/:id", userHandlers.UpdateUser)
 	}
+	adminUsers := r.Group("/api/users")
+	adminUsers.Use(authRequired, adminOnly)
+	{
+		adminUsers.GET("", userHandlers.GetAllUsers)
+	}
 
 	services := r.Group("/api/services")
 	{
@@ -53,33 +60,45 @@ func RegisterAPIRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		servicesProtected.POST("", serviceHandlers.CreateService)
 		servicesProtected.PUT("/:id", serviceHandlers.UpdateService)
+		servicesProtected.PATCH("/:id/active", serviceHandlers.UpdateServiceActive)
 		servicesProtected.DELETE("/:id", serviceHandlers.DeleteService)
 	}
 
 	bookings := r.Group("/api/bookings")
 	{
-		bookings.GET("/:id", bookingHandlers.GetBooking)
+		bookings.GET("", bookingHandlers.GetAllBookings)
 		bookings.GET("/user/:userId", bookingHandlers.GetUserBookings)
+		bookings.GET("/:id", bookingHandlers.GetBooking)
 	}
 	bookingsProtected := r.Group("/api/bookings")
 	bookingsProtected.Use(authRequired)
 	{
 		bookingsProtected.POST("", bookingHandlers.CreateBooking)
 		bookingsProtected.PUT("/:id", bookingHandlers.UpdateBooking)
+		bookingsProtected.DELETE("/:id", bookingHandlers.CancelBooking)
 		bookingsProtected.PATCH("/:id/status", bookingHandlers.CancelBooking)
 	}
 
 	approval := r.Group("/api/approval")
 	approval.Use(authRequired)
 	{
-		approval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
-		approval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
-		approval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
-		approval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
-		approval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
-		approval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
-		approval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
-		approval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		staffApproval := approval.Group("")
+		staffApproval.Use(staffOnly)
+		{
+			staffApproval.GET("/staff/:staffId/pending", approvalHandlers.GetPendingBookings)
+			staffApproval.GET("/staff/:staffId/all", approvalHandlers.GetAllBookingsForService)
+			staffApproval.PUT("/bookings/:id/approve", approvalHandlers.ApproveBooking)
+			staffApproval.PUT("/bookings/:id/reject", approvalHandlers.RejectBooking)
+		}
+
+		adminApproval := approval.Group("")
+		adminApproval.Use(adminOnly)
+		{
+			adminApproval.GET("/admin/:userId/pending", approvalHandlers.GetAllPendingBookings)
+			adminApproval.GET("/admin/:userId/all", approvalHandlers.GetAllBookings)
+			adminApproval.PUT("/admin/:userId/bookings/:id/approve", approvalHandlers.AdminApproveBooking)
+			adminApproval.PUT("/admin/:userId/bookings/:id/reject", approvalHandlers.AdminRejectBooking)
+		}
 	}
 
 	notifications := r.Group("/api/notifications")

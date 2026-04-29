@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 	"time"
@@ -31,6 +32,9 @@ func TestGetNotificationsReturnsUserNotifications(t *testing.T) {
 	if len(notifications) != 1 || notifications[0].UserID != user.ID {
 		t.Fatalf("expected one notification for user %s, got %+v", user.ID, notifications)
 	}
+	if notifications[0].Title == "" {
+		t.Fatalf("expected notification title to be present, got %+v", notifications[0])
+	}
 }
 
 func TestCreateNotificationDefaultsUnread(t *testing.T) {
@@ -56,6 +60,26 @@ func TestCreateNotificationDefaultsUnread(t *testing.T) {
 	if notification.IsRead {
 		t.Fatal("expected notification to be unread by default")
 	}
+	if notification.UserID != user.ID || notification.Type != "booking" {
+		t.Fatalf("expected important fields to be returned, got %+v", notification)
+	}
+}
+
+func TestCreateNotificationReturnsBadRequestForInvalidPayload(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewNotificationHandler(db)
+	router := gin.New()
+	router.POST("/notifications", handler.CreateNotification)
+
+	rec := performRequest(t, router, http.MethodPost, "/notifications", map[string]any{
+		"userId":  "user-1",
+		"message": "Missing title and type",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
 }
 
 func TestMarkAsReadUpdatesNotification(t *testing.T) {
@@ -75,6 +99,11 @@ func TestMarkAsReadUpdatesNotification(t *testing.T) {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
 	}
 
+	resp := decodeJSON[models.Notification](t, rec)
+	if !resp.IsRead || resp.ID != notification.ID {
+		t.Fatalf("expected updated notification in response, got %+v", resp)
+	}
+
 	var updated models.Notification
 	if err := db.First(&updated, "id = ?", notification.ID).Error; err != nil {
 		t.Fatalf("failed to reload notification: %v", err)
@@ -86,6 +115,7 @@ func TestMarkAsReadUpdatesNotification(t *testing.T) {
 
 func TestMarkAsReadReturnsNotFoundForMissingNotification(t *testing.T) {
 	db := setupTestDB(t)
+
 	handler := NewNotificationHandler(db)
 	router := gin.New()
 	router.PUT("/notifications/:id/read", handler.MarkAsRead)
@@ -94,5 +124,25 @@ func TestMarkAsReadReturnsNotFoundForMissingNotification(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateNotificationRejectsMalformedJSON(t *testing.T) {
+	db := setupTestDB(t)
+
+	handler := NewNotificationHandler(db)
+	router := gin.New()
+	router.POST("/notifications", handler.CreateNotification)
+
+	req, err := http.NewRequest(http.MethodPost, "/notifications", bytes.NewBufferString("{"))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := performRawRequest(router, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
 	}
 }
