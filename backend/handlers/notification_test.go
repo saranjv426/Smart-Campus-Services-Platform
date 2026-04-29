@@ -83,3 +83,16 @@ func TestMarkAsReadUpdatesNotification(t *testing.T) {
 		t.Fatal("expected notification to be marked as read")
 	}
 }
+
+func TestMarkAsReadReturnsNotFoundForMissingNotification(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewNotificationHandler(db)
+	router := gin.New()
+	router.PUT("/notifications/:id/read", handler.MarkAsRead)
+
+	rec := performRequest(t, router, http.MethodPut, "/notifications/missing/read", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}

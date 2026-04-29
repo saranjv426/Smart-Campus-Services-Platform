@@ -63,8 +63,13 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 // MarkAsRead marks a notification as read
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.db.Model(&models.Notification{}).Where("id = ?", id).Update("is_read", true).Error; err != nil {
+	result := h.db.Model(&models.Notification{}).Where("id = ?", id).Update("is_read", true)
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notification"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
 		return
 	}
 
