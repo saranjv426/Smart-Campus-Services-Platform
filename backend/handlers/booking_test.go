@@ -16,6 +16,7 @@ func setupBookingTestRouter(handler *BookingHandler) *gin.Engine {
 	router.GET("/bookings/:id", handler.GetBooking)
 	router.GET("/bookings/user/:userId", handler.GetUserBookings)
 	router.PUT("/bookings/:id", handler.UpdateBooking)
+	router.DELETE("/bookings/:id", handler.CancelBooking)
 	router.PATCH("/bookings/:id/status", handler.CancelBooking)
 	return router
 }
@@ -146,6 +147,18 @@ func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
 	}
 }
 
+func TestGetBookingNotFound(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodGet, "/bookings/missing", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestGetUserBookingsReturnsUserRecords(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
@@ -166,6 +179,30 @@ func TestGetUserBookingsReturnsUserRecords(t *testing.T) {
 	bookings := decodeJSON[[]models.Booking](t, rec)
 	if len(bookings) != 1 || bookings[0].UserID != user.ID {
 		t.Fatalf("expected one booking for user %s, got %+v", user.ID, bookings)
+	}
+}
+
+func TestCancelBookingDeleteMarksStatusCancelled(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+	booking := createBookingFixture(t, db, user.ID, service.ID)
+
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodDelete, "/bookings/"+booking.ID, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var updated models.Booking
+	if err := db.First(&updated, "id = ?", booking.ID).Error; err != nil {
+		t.Fatalf("failed to reload booking: %v", err)
+	}
+	if updated.Status != "cancelled" {
+		t.Fatalf("expected status cancelled, got %s", updated.Status)
 	}
 }
 

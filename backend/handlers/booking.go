@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -126,8 +128,13 @@ func (h *BookingHandler) UpdateBooking(c *gin.Context) {
 // CancelBooking cancels a booking
 func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	id := c.Param("id")
-	var req UpdateBookingStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	req := UpdateBookingStatusRequest{Status: "cancelled"}
+	if c.Request.Method != http.MethodDelete {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	} else if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
