@@ -12,6 +12,17 @@ import (
 	"smart-campus-services/models"
 )
 
+func setupBookingTestRouter(handler *BookingHandler) *gin.Engine {
+	router := gin.New()
+	router.POST("/bookings", handler.CreateBooking)
+	router.GET("/bookings/:id", handler.GetBooking)
+	router.GET("/bookings/user/:userId", handler.GetUserBookings)
+	router.PUT("/bookings/:id", handler.UpdateBooking)
+	router.DELETE("/bookings/:id", handler.CancelBooking)
+	router.PATCH("/bookings/:id/status", handler.CancelBooking)
+	return router
+}
+
 func TestCreateBookingSetsPendingStatus(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
@@ -114,6 +125,84 @@ func TestGetAllBookings(t *testing.T) {
 	}
 }
 
+func TestCreateBookingRequiresEndTime(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodPost, "/bookings", map[string]any{
+		"userId":    user.ID,
+		"serviceId": service.ID,
+		"startTime": time.Now().UTC().Add(time.Hour),
+		"notes":     "Missing end time",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateBookingRejectsEndTimeBeforeStartTime(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	start := time.Now().UTC().Add(2 * time.Hour)
+	rec := performRequest(t, router, http.MethodPost, "/bookings", CreateBookingRequest{
+		UserID:    user.ID,
+		ServiceID: service.ID,
+		StartTime: start,
+		EndTime:   start.Add(-time.Hour),
+		Notes:     "Invalid time range",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateBookingCreatesNotification(t *testing.T) {
+	db := setupTestDB(t)
+	user := createUserFixture(t, db)
+	service := createServiceFixture(t, db)
+
+	handler := NewBookingHandler(db)
+	router := setupBookingTestRouter(handler)
+
+	start := time.Now().UTC().Add(2 * time.Hour)
+	rec := performRequest(t, router, http.MethodPost, "/bookings", CreateBookingRequest{
+		UserID:    user.ID,
+		ServiceID: service.ID,
+		StartTime: start,
+		EndTime:   start.Add(time.Hour),
+		Notes:     "Need slot",
+	})
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var notifications []models.Notification
+	if err := db.Where("user_id = ?", user.ID).Find(&notifications).Error; err != nil {
+		t.Fatalf("failed to fetch notifications: %v", err)
+	}
+	if len(notifications) != 1 {
+		t.Fatalf("expected 1 notification, got %d", len(notifications))
+	}
+	if notifications[0].Title != "Booking Request Submitted" {
+		t.Fatalf("expected booking notification title, got %s", notifications[0].Title)
+	}
+	if notifications[0].IsRead {
+		t.Fatalf("expected notification to be unread")
+	}
+}
+
 func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
@@ -121,8 +210,7 @@ func TestGetBookingReturnsBookingWithRelations(t *testing.T) {
 	booking := createBookingFixture(t, db, user.ID, service.ID)
 
 	handler := NewBookingHandler(db)
-	router := gin.New()
-	router.GET("/bookings/:id", handler.GetBooking)
+	router := setupBookingTestRouter(handler)
 
 	rec := performRequest(t, router, http.MethodGet, "/bookings/"+booking.ID, nil)
 
@@ -167,8 +255,7 @@ func TestGetUserBookingsWithoutStatusFilterReturnsAllUserRecords(t *testing.T) {
 	createBookingFixture(t, db, otherUser.ID, service.ID)
 
 	handler := NewBookingHandler(db)
-	router := gin.New()
-	router.GET("/bookings/user/:userId", handler.GetUserBookings)
+	router := setupBookingTestRouter(handler)
 
 	rec := performRequest(t, router, http.MethodGet, "/bookings/user/"+user.ID, nil)
 
@@ -271,24 +358,16 @@ func TestGetUserBookingsWithNoMatchingStatusReturnsEmptyArray(t *testing.T) {
 	}
 }
 
-func TestUpdateBookingPersistsChanges(t *testing.T) {
+func TestCancelBookingDeleteMarksStatusCancelled(t *testing.T) {
 	db := setupTestDB(t)
 	user := createUserFixture(t, db)
 	service := createServiceFixture(t, db)
 	booking := createBookingFixture(t, db, user.ID, service.ID)
 
 	handler := NewBookingHandler(db)
-	router := gin.New()
-	router.PUT("/bookings/:id", handler.UpdateBooking)
+	router := setupBookingTestRouter(handler)
 
-	now := time.Now().UTC()
-	rec := performRequest(t, router, http.MethodPut, "/bookings/"+booking.ID, CreateBookingRequest{
-		UserID:    user.ID,
-		ServiceID: service.ID,
-		StartTime: now.Add(4 * time.Hour),
-		EndTime:   now.Add(5 * time.Hour),
-		Notes:     "Updated note",
-	})
+	rec := performRequest(t, router, http.MethodDelete, "/bookings/"+booking.ID, nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
@@ -303,8 +382,8 @@ func TestUpdateBookingPersistsChanges(t *testing.T) {
 	if err := db.First(&updated, "id = ?", booking.ID).Error; err != nil {
 		t.Fatalf("failed to reload booking: %v", err)
 	}
-	if updated.Notes != "Updated note" {
-		t.Fatalf("expected booking notes to be updated, got %s", updated.Notes)
+	if updated.Status != "cancelled" {
+		t.Fatalf("expected status cancelled, got %s", updated.Status)
 	}
 	if updated.Status != "pending" {
 		t.Fatalf("expected update to preserve booking status, got %s", updated.Status)

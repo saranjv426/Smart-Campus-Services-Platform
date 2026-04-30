@@ -74,6 +74,62 @@ func TestRegisterRejectsDuplicateEmail(t *testing.T) {
 	}
 }
 
+func TestRegisterRejectsInvalidRole(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+	router := setupAuthTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodPost, "/register", map[string]any{
+		"email":     "student@campus.edu",
+		"password":  "secret123",
+		"firstName": "Sam",
+		"lastName":  "Student",
+		"phone":     "555-1000",
+		"role":      "visitor",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRegisterInvalidEmail(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+	router := setupAuthTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodPost, "/register", map[string]any{
+		"email":     "not-an-email",
+		"password":  "secret123",
+		"firstName": "Sam",
+		"lastName":  "Student",
+		"phone":     "555-1000",
+		"role":      "student",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRegisterMissingPhone(t *testing.T) {
+	db := setupTestDB(t)
+	handler := NewAuthHandler(db)
+	router := setupAuthTestRouter(handler)
+
+	rec := performRequest(t, router, http.MethodPost, "/register", map[string]any{
+		"email":     "student@campus.edu",
+		"password":  "secret123",
+		"firstName": "Sam",
+		"lastName":  "Student",
+		"role":      "student",
+	})
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestLoginAuthenticatesUser(t *testing.T) {
 	if err := validation.Init(); err != nil {
 		t.Fatalf("failed to initialize validator: %v", err)
@@ -86,8 +142,7 @@ func TestLoginAuthenticatesUser(t *testing.T) {
 	})
 
 	handler := NewAuthHandler(db)
-	router := gin.New()
-	router.POST("/login", handler.Login)
+	router := setupAuthTestRouter(handler)
 
 	rec := performRequest(t, router, http.MethodPost, "/login", LoginRequest{
 		Email:    "student@campus.edu",
@@ -116,8 +171,7 @@ func TestLoginRejectsInvalidPassword(t *testing.T) {
 	})
 
 	handler := NewAuthHandler(db)
-	router := gin.New()
-	router.POST("/login", handler.Login)
+	router := setupAuthTestRouter(handler)
 
 	rec := performRequest(t, router, http.MethodPost, "/login", LoginRequest{
 		Email:    "student@campus.edu",
@@ -136,9 +190,7 @@ func TestLogoutReturnsSuccess(t *testing.T) {
 
 	db := setupTestDB(t)
 	handler := NewAuthHandler(db)
-
-	router := gin.New()
-	router.POST("/logout", handler.Logout)
+	router := setupAuthTestRouter(handler)
 
 	rec := performRequest(t, router, http.MethodPost, "/logout", nil)
 

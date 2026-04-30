@@ -439,7 +439,7 @@ POST   /api/bookings         - Create booking
 GET    /api/bookings/:id     - Get booking details
 GET    /api/bookings/user/:userId - Get user's bookings
 PUT    /api/bookings/:id     - Update booking
-DELETE /api/bookings/:id     - Cancel booking
+PATCH  /api/bookings/:id/status - Cancel booking with {"status":"cancelled"}
 ```
 
 #### Admin Approval (Sprint 3)
