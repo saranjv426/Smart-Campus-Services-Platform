@@ -2,6 +2,12 @@
 
 Smart Campus Services Platform is a full-stack web application for discovering, booking, reviewing, and managing campus services. Students can browse services, create bookings, review services, and manage their profiles. Staff and administrators can manage services, review booking requests, and track service activity.
 
+## Team Members
+Venkata Sai Saran Jonnalagadda - 11114995
+Srikar Panuganti - 38909216
+Keerthi Reddy Gudibandi - 13652831
+Vishnu Sai Padyala - 32712860
+
 ## Requirements
 
 Install these tools before running the application:
@@ -36,8 +42,6 @@ Smart-Campus-Services-Platform/
 ```
 A comprehensive full-stack web application for managing campus services at the University of Florida. This platform enables students, staff, and administrators to discover, book, manage, and administer campus services with an intuitive interface and powerful backend.
 
-**Status**: ✅ **Sprint 3 Complete** | **Last Updated**: April 13, 2026 | **Version**: 3.0 Production-Ready
-
 ---
 
 ## 🎯 Project Overview
@@ -50,28 +54,6 @@ A comprehensive full-stack web application for managing campus services at the U
 - ✅ Advanced filtering and search capabilities
 - ✅ Responsive design across all devices
 - ✅ Complete admin dashboard with analytics
-
-### What's Built (Sprint 3)
-
-#### Issue #62: Admin Dashboard - All Bookings Overview ✅
-- Real-time statistics (4 stat cards)
-- Comprehensive bookings table (8 columns)
-- Advanced filtering (status + category)
-- Responsive design
-
-#### Issue #63: Admin Approve & Reject Any Booking ✅
-- Approve bookings with optional notes
-- Reject bookings with optional reason
-- Real-time table updates
-- User notifications
-
-#### Issue #64: Admin Service Create & Delete UI ✅
-- Service management tab
-- Service grid with images ✨ **NEW: Unsplash images for all 9 services**
-- Create/edit/delete services
-- Full CRUD operations
-
----
 
 ## 🌟 Key Features
 
@@ -906,22 +888,6 @@ This project demonstrates:
 
 ---
 
-## 👥 Project Team
-
-### Team Members
-- Venkata Sai Saran Jonnalagadda
-- Srikar Panuganti
-- Keerthi Reddy Gudibandi
-- Vishnu Sai Padyala
-
-### Sprint 3 Lead
-- Comprehensive overhaul of Admin Dashboard
-- Implementation of all 3 GitHub issues
-- Service image integration
-- Test suite development
-
----
-
 ## 📞 Support & Questions
 
 For questions or issues:
@@ -960,17 +926,3 @@ For questions or issues:
 
 ---
 
-## 📄 Version History
-
-| Version | Date | Status |
-|---------|------|--------|
-| 3.0 | April 13, 2026 | ✅ Sprint 3 Complete |
-| 2.0 | March 1, 2026 | ✅ Sprint 2 Complete |
-| 1.0 | February 1, 2026 | ✅ Sprint 1 Complete |
-
----
-
-**Status**: ✅ Production Ready  
-**Last Updated**: April 13, 2026  
-**Version**: 3.0  
-**Ready for Submission**: Yes ✅
