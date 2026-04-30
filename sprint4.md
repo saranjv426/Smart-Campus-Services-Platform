@@ -1,8 +1,8 @@
 # Sprint 4 Report - Smart Campus Services Platform
 
-A comprehensive Sprint 4 summary for the Smart Campus Services Platform focusing on expanding frontend test coverage for critical user authentication and service discovery flows.
+A comprehensive Sprint 4 summary for the Smart Campus Services Platform covering completed work, frontend and backend automated tests, documentation updates, and the current backend API reflected in the project.
 
-**Status**: ✅ **Sprint 4 In Progress** | **Last Updated**: April 26, 2026 | **Sprint Focus**: Frontend Test Coverage for Authentication, Services Discovery, and Service Details
+**Status**: ✅ **Sprint 4 Complete** | **Sprint Focus**: Frontend Test Expansion, Booking Workflow Validation, Dashboard Reliability, Backend Test Expansion, and Documentation Updates
 
 ---
 
@@ -15,273 +15,472 @@ A comprehensive Sprint 4 summary for the Smart Campus Services Platform focusing
 - Vishnu Sai Padyala - 32712860
 
 ### Sprint Goal
-- Achieve comprehensive test coverage for critical frontend user flows including authentication (Login/Register), service discovery (Services Page with filtering and search), and service booking (ServiceDetail Page).
+- Strengthen the reliability of the Smart Campus Services Platform by expanding frontend unit test coverage, validating end-to-end navigation, improving backend handler test coverage, and updating project/testing documentation for easier setup, execution, and evaluation.
 
 ### Sprint 4 Completion Summary
 
 | Area | Outcome | Status |
 |------|---------|--------|
-| Services Page Filter & Search Tests (#85) | In Progress | 🔄 |
-| ServiceDetail Page Tests (#84) | In Progress | 🔄 |
-| Login & Register Page Tests (#83) | In Progress | 🔄 |
-| End-to-end test scenarios | In Progress | 🔄 |
-| Test coverage documentation | In Progress | 🔄 |
+| Profile page test coverage | Completed | ✅ |
+| Staff dashboard test coverage | Completed | ✅ |
+| Admin dashboard test coverage | Completed | ✅ |
+| Bookings page cancel and filter tests | Completed | ✅ |
+| Login, Register, Services, and Service Detail frontend test coverage | Completed | ✅ |
+| Cypress basic navigation coverage | Completed | ✅ |
+| Review handler backend tests | Completed | ✅ |
+| Expanded service handler tests for update and delete | Completed | ✅ |
+| README and testing guide updates | Completed | ✅ |
+| Updated backend API documentation | Completed | ✅ |
 
 ---
 
-## 📋 Work Planned For Sprint 4
+## 📋 Work Completed In Sprint 4
 
-## 1. Services Page Filter & Search Tests (#85)
+## 1. Profile Page Tests
 
 ### Description
-Comprehensive test coverage for the Services page filtering and search functionality, enabling users to discover services by category and search terms.
+Expanded and refined frontend unit tests for the Profile page to verify profile rendering, user details, booking history, review display, profile editing, validation, and delete-review behavior.
 
-### Test Coverage
-- **Category Filter Tests**:
-  - Filtering services by library category
-  - Filtering services by dining category
-  - Filtering services by transportation category
-  - Filtering services by health category
-  - Filtering services by housing category
-  - Filtering services by events category
-  - Filtering services by outdoor category
-  - Clearing selected filters
-
-- **Search Functionality Tests**:
-  - Searching services by name
-  - Searching services by description
-  - Partial name matching
-  - Case-insensitive search
-  - Clearing search input
-
-- **Combined Filter & Search Tests**:
-  - Applying filter and search together
-  - Clearing all filters and search
-  - Filter interaction with search results
-
-- **Edge Cases & State Tests**:
-  - Empty services list
-  - No results matching search/filter
-  - API error handling
-  - Loading state display
-  - Error state display
+### Completed Work
+- Added and refined tests for profile loading and route-based profile fetching.
+- Verified rendering of user details such as name, role, email, and other profile-facing information.
+- Added coverage for recent bookings summary rendering.
+- Added coverage for user reviews and empty review state.
+- Tested edit-profile flow, including entering edit mode and updating form fields.
+- Tested save behavior for profile updates.
+- Added validation coverage for required fields.
+- Covered delete-review flow and related success behavior.
+- Covered error handling for profile fetch failures.
 
 ### Key Frontend Files
-- `frontend/src/pages/Services.js`
+- `frontend/src/pages/Profile.test.js`
+- `frontend/src/pages/Profile.js`
+
+---
+
+## 2. StaffDashboard & AdminDashboard Page Tests
+
+### Description
+Expanded frontend unit tests for both dashboard pages to validate booking-management workflows for staff and administrators.
+
+### Completed Work
+- Added tests for Staff Dashboard rendering and pending-booking display.
+- Verified approve and reject button rendering for pending staff bookings.
+- Tested modal opening, note entry, submission flow, and modal closing behavior for staff actions.
+- Added error-handling coverage for staff approval/rejection workflow.
+- Added tests for Admin Dashboard rendering and admin-only access behavior.
+- Verified fetching and rendering of bookings and services on the admin side.
+- Added coverage for booking statistics cards and dashboard summary UI.
+- Tested admin approve and reject flows.
+- Tested tab navigation between bookings overview and manage services sections.
+- Tested booking filtering by status and service selection.
+
+### Key Frontend Files
+- `frontend/src/pages/StaffDashboard.test.js`
+- `frontend/src/pages/AdminDashboard.test.js`
+- `frontend/src/pages/StaffDashboard.js`
+- `frontend/src/pages/AdminDashboard.js`
+
+---
+
+## 3. Bookings Page Tests – Cancel & Filter
+
+### Description
+Expanded frontend unit tests for the My Bookings page with a focus on status filtering, refresh behavior, cancellation flow, and edge cases.
+
+### Completed Work
+- Added tests for authenticated booking fetch on page load.
+- Verified rendering of booking cards with service details, locations, notes, and status badges.
+- Added status-filter tests for pending and all bookings views.
+- Verified filter reset behavior when returning to the All view.
+- Added cancel-button visibility tests for eligible pending bookings.
+- Tested cancel-booking confirmation flow and booking-list refresh after cancellation.
+- Tested refresh button behavior.
+- Added empty-state coverage when no bookings are returned.
+- Added unauthenticated-user error-state coverage.
+
+### Key Frontend Files
+- `frontend/src/pages/Bookings.test.js`
+- `frontend/src/pages/Bookings.js`
+
+---
+
+## 4. Comprehensive Frontend Test Coverage for Authentication and Service Discovery Pages
+
+### Description
+Expanded frontend test coverage for the application’s core user-entry and service-discovery flows.
+
+### Completed Work
+- Added/refined unit tests for Login page form rendering, submission flow, token storage, and failure cases.
+- Added/refined unit tests for Register page input handling, role selection, form submission, and error handling.
+- Added/refined Services page tests for service rendering, search, and category filtering.
+- Added/refined Service Detail page tests for service loading, review rendering, booking-form behavior, and validation.
+- Verified core frontend entry flows needed by new users before they reach the dashboard and booking workflows.
+
+### Key Frontend Files
+- `frontend/src/pages/Login.test.js`
+- `frontend/src/pages/Register.test.js`
 - `frontend/src/pages/Services.test.js`
-
-### Test Framework
-- Jest for unit testing
-- React Testing Library for component testing
-- Mock axios for API calls
-
----
-
-## 2. ServiceDetail Page Tests (#84)
-
-### Description
-Comprehensive test coverage for the ServiceDetail page, which displays detailed service information and allows users to submit booking requests.
-
-### Test Coverage
-- **Service Detail Rendering Tests**:
-  - Service name, description, and location display
-  - Service rating and review count display
-  - Service image rendering
-  - Service availability status
-
-- **Booking Form Tests**:
-  - Form field presence validation
-  - Date/time picker interaction
-  - Number of people validation
-  - Booking notes/preferences text area
-  - Submit button state management
-
-- **Booking Form Validation Tests**:
-  - Required field validation (date, time, duration)
-  - Invalid date selection (past dates)
-  - Overlapping booking detection
-  - User feedback on validation errors
-  - Success message after submission
-
-- **Review & Rating Tests**:
-  - Existing reviews display
-  - Review rating display
-  - Review author and date display
-  - Review submission form (if applicable)
-  - No reviews state
-
-- **Navigation & State Tests**:
-  - Back button navigation
-  - Service not found error state
-  - API error handling
-  - Loading state display
-
-### Key Frontend Files
-- `frontend/src/pages/ServiceDetail.js`
 - `frontend/src/pages/ServiceDetail.test.js`
 
-### Test Framework
-- Jest for unit testing
-- React Testing Library for component testing
-- Mock axios for API calls
-
 ---
 
-## 3. Login & Register Page Tests (#83)
+## 5. Cypress End-to-End Navigation Test
 
 ### Description
-Comprehensive test coverage for authentication flows including login and user registration with role selection.
+Maintained end-to-end browser validation for a basic user navigation flow using Cypress.
 
-### Test Coverage
+### Completed Work
+- Verified application load at the home page.
+- Clicked the **Get Started** button from the landing page.
+- Confirmed navigation to the Register page.
+- Confirmed that Register page content rendered successfully after navigation.
 
-#### Login Page Tests
-- **Form Rendering**:
-  - Email input field presence
-  - Password input field presence
-  - Login button presence
-  - Register link presence
-
-- **Form Validation**:
-  - Empty email validation
-  - Invalid email format detection
-  - Empty password validation
-  - Minimum password length enforcement
-  - Real-time validation feedback
-
-- **Authentication Tests**:
-  - Successful login with valid credentials
-  - Failed login with invalid email
-  - Failed login with incorrect password
-  - API error handling (500, network errors)
-  - Login disabled state during API call
-
-- **Token & Storage Tests**:
-  - Auth token storage in localStorage
-  - User profile storage in localStorage
-  - Token persistence across page reload
-  - Logout token removal
-
-- **Navigation Tests**:
-  - Redirect to home page after successful login
-  - Redirect to login page for unauthorized access
-  - Remember me functionality (if applicable)
-
-#### Register Page Tests
-- **Form Rendering**:
-  - All input fields present (email, password, firstName, lastName, phone)
-  - Role selection dropdown/buttons
-  - Submit button presence
-  - Login link presence
-
-- **Form Validation**:
-  - Email format validation
-  - Password strength validation
-  - Password confirmation matching
-  - First name and last name required fields
-  - Phone number format validation
-  - Role selection required
-
-- **Registration Tests**:
-  - Successful registration with all valid inputs
-  - Duplicate email error handling (409)
-  - Password mismatch detection
-  - Required field validation messages
-  - API error handling
-
-- **Role Selection Tests**:
-  - Student role selection
-  - Staff role selection (if applicable)
-  - Admin role selection (if applicable)
-  - Default role selection
-  - Role persistence in user profile
-
-- **Post-Registration Tests**:
-  - Auto-login after successful registration
-  - Redirect to home page or onboarding
-  - User profile created with correct role
-  - Auth token generation and storage
-
-### Key Frontend Files
-- `frontend/src/pages/Login.js`
-- `frontend/src/pages/Login.test.js`
-- `frontend/src/pages/Register.js`
-- `frontend/src/pages/Register.test.js`
-
-### Test Framework
-- Jest for unit testing
-- React Testing Library for component testing
-- User Event for simulating user interactions
-- Mock axios for API calls
-- Mock react-router-dom for navigation testing
+### Key Cypress File
+- `frontend/cypress/e2e/spec.cy.js`
 
 ---
 
-## 📊 Test Execution Guidelines
+## 6. Documentation Updates - README and TESTING_GUIDE
 
-### Running Tests
+### Description
+Updated project documentation to make setup, execution, and testing easier for developers, teammates, and graders.
+
+### Completed Work
+- Updated README content to better explain project purpose and execution steps.
+- Documented frontend and backend setup flow.
+- Added or refined test-running instructions for frontend unit tests.
+- Added or refined backend test-running instructions.
+- Added or refined Cypress execution guidance.
+- Improved testing-related documentation so project evaluation is easier and more reproducible.
+
+### Key Documentation Files
+- `README.md`
+- `TESTING_GUIDE.md`
+
+---
+
+## 7. Backend Test Expansion - Review Handler Tests
+
+### Description
+Expanded backend review handler tests to improve regression protection for review-related workflows.
+
+### Completed Work
+- Verified review creation flow.
+- Verified service-rating recalculation behavior after review creation.
+- Verified service review listing behavior.
+- Verified single review retrieval behavior.
+- Verified user review retrieval behavior.
+- Verified review deletion behavior and post-delete rating recalculation.
+- Strengthened backend coverage around review ownership and correctness of review-side effects.
+
+### Key Backend Files
+- `backend/handlers/review_test.go`
+- `backend/handlers/review.go`
+
+---
+
+## 8. Backend Test Expansion - Service Handler Update & Delete Coverage
+
+### Description
+Expanded service handler tests to strengthen backend coverage for service update and delete workflows.
+
+### Completed Work
+- Added or refined tests covering service update behavior.
+- Added or refined tests covering service delete behavior.
+- Verified persistence of updated service data.
+- Verified successful removal of deleted services.
+- Improved reliability of service-management backend flows that support the admin dashboard.
+
+### Key Backend Files
+- `backend/handlers/service_test.go`
+- `backend/handlers/service.go`
+
+---
+
+## 🧪 Frontend Unit Tests
+
+The following frontend test files are currently present and cover major UI flows, dashboards, profile functionality, booking workflows, authentication flows, and service discovery interactions.
+
+### Frontend Test Files
+- `frontend/src/pages/AdminDashboard.test.js`
+- `frontend/src/pages/Bookings.test.js`
+- `frontend/src/pages/Home.test.js`
+- `frontend/src/pages/Login.test.js`
+- `frontend/src/pages/Profile.test.js`
+- `frontend/src/pages/ProfileEdit.test.js`
+- `frontend/src/pages/Register.test.js`
+- `frontend/src/pages/ServiceDetail.test.js`
+- `frontend/src/pages/Services.test.js`
+- `frontend/src/pages/StaffDashboard.test.js`
+
+### Sprint 4 Frontend Test Areas Especially Relevant
+- `Profile.test.js`
+  - profile loading
+  - user information rendering
+  - bookings summary
+  - reviews
+  - edit profile flow
+  - validation and delete review behavior
+- `StaffDashboard.test.js`
+  - pending bookings display
+  - approve/reject button rendering
+  - modal interaction
+  - notes entry
+  - approval/rejection submission
+- `AdminDashboard.test.js`
+  - admin-only access behavior
+  - booking and service fetch behavior
+  - statistics cards
+  - tab navigation
+  - filtering and approval workflows
+- `Bookings.test.js`
+  - authenticated booking loading
+  - booking detail rendering
+  - filter behavior
+  - cancel-booking flow
+  - refresh behavior
+  - empty state and unauthenticated state
+- `Login.test.js`
+  - authentication flow and error handling
+- `Register.test.js`
+  - registration form submission and validation
+- `Services.test.js`
+  - services rendering, search, and category filtering
+- `ServiceDetail.test.js`
+  - service loading, booking-form behavior, and review rendering
+
+### Frontend Unit Test Result
+From the `frontend` directory:
+
 ```bash
-cd frontend
-npm test
+npm test -- --watchAll=false
 ```
 
-### Test File Organization
-- `*.test.js` files co-located with component files
-- Setup file: `src/setupTests.js`
-- Mock utilities: `src/__mocks__/axios.js`
-- Testing utilities: `src/utils/testUtils.js`
+---
 
-### Coverage Goals
-- Minimum 80% statement coverage for critical pages
-- All user interaction paths covered
-- All API integration points tested
-- Error states and edge cases included
+## 🧪 Cypress Tests
 
-### Test Data
-- Mock user data for authentication tests
-- Mock service data for discovery tests
-- Mock API responses for integration testing
-- Sample dates and times for booking tests
+### Cypress Test File
+- `frontend/cypress/e2e/spec.cy.js`
+
+### Cypress Coverage
+- Visits the application home page.
+- Clicks the **Get Started** button.
+- Verifies navigation to the Register page.
+- Confirms Register page content renders successfully.
+
+### Running Cypress Tests
+From the `frontend` directory:
+
+```bash
+npm run cypress:run
+```
+
+Or run the specific spec:
+
+```bash
+npm run cypress:run -- --spec "cypress/e2e/spec.cy.js"
+```
 
 ---
 
-## 🔗 Related Test Files
+## 🧪 Backend Unit Tests
 
-| Feature | Test File |
-|---------|-----------|
-| Services Page | `frontend/src/pages/Services.test.js` |
-| ServiceDetail Page | `frontend/src/pages/ServiceDetail.test.js` |
-| Login Page | `frontend/src/pages/Login.test.js` |
-| Register Page | `frontend/src/pages/Register.test.js` |
-| App Component | `frontend/src/App.test.js` |
+The backend includes handler, middleware, router, main-package, and helper tests used to validate business logic and endpoint behavior.
+
+### Backend Test Files
+- `backend/handlers/approval_test.go`
+- `backend/handlers/auth_test.go`
+- `backend/handlers/booking_test.go`
+- `backend/handlers/notification_test.go`
+- `backend/handlers/review_test.go`
+- `backend/handlers/service_test.go`
+- `backend/handlers/test_helpers_test.go`
+- `backend/handlers/user_test.go`
+- `backend/main_test.go`
+
+### Sprint 4 Backend Test Areas Especially Relevant
+- `review_test.go`
+  - create review
+  - get service reviews
+  - get single review
+  - get user reviews
+  - delete review and rating recalculation
+- `service_test.go`
+  - update service persistence
+  - delete service behavior
+  - additional service reliability checks
+- `approval_test.go`
+  - continued coverage for booking approval/rejection flows used by dashboards
+- `booking_test.go`
+  - booking retrieval and cancellation behavior supporting frontend flows
+- `auth_test.go`
+  - authentication behavior used by login and protected routes
+- `user_test.go`
+  - profile-related backend behavior supporting frontend profile tests
+
+### Backend Test Result
+From the `backend` directory:
+
+```bash
+go test ./...
+```
 
 ---
 
-## ✅ Verification Steps
+## 🔗 Updated Backend API Documentation
 
-### Local Testing
-1. Run `npm test` in frontend directory
-2. Verify all tests pass
-3. Check coverage reports for target pages
-4. Run Cypress e2e tests (if applicable)
+Sprint 4 documentation reflects the current backend API used by the application and validated through frontend and backend testing. The documented backend areas include authentication, users, services, bookings, approval, notifications, and reviews.
 
-### Code Quality
-1. Verify test files follow Jest conventions
-2. Check mock data accuracy
-3. Review test descriptions for clarity
-4. Ensure no hardcoded values in tests
+## Authentication
 
-### Git Integration
-1. All test files committed to repository
-2. Tests run successfully in CI/CD pipeline
-3. No console errors or warnings in test output
-4. Coverage thresholds met
+### `POST /api/auth/register`
+- Register a new user.
+
+### `POST /api/auth/login`
+- Authenticate an existing user.
+
+### `POST /api/auth/logout`
+- Logout endpoint.
+
+### `POST /api/auth/refresh`
+- Token refresh endpoint.
 
 ---
 
-## 📝 Notes
+## Users
 
-- All tests use React Testing Library best practices (querying by role/label, not implementation details)
-- Mock axios responses should match actual API contract
-- Tests should be independent and not rely on execution order
-- Use `beforeEach` and `afterEach` for setup and cleanup
-- Test descriptions should clearly state what is being tested and expected outcome
+### `GET /api/users/:id`
+- Fetch a single user by ID.
+
+### `GET /api/users/:id/profile`
+- Fetch a user profile with preloaded bookings and reviews.
+
+### `PUT /api/users/:id`
+- Update user profile-facing fields.
+
+### `GET /api/users`
+- Protected admin-only endpoint returning all users.
+
+---
+
+## Services
+
+### `GET /api/services`
+- Returns the services list.
+
+### `GET /api/services/:id`
+- Returns a single service with related review data.
+
+### `GET /api/services/category/:category`
+- Returns services for a specific category.
+
+### `POST /api/services`
+- Protected endpoint to create a new service.
+
+### `PUT /api/services/:id`
+- Protected endpoint to update service details.
+
+### `PATCH /api/services/:id/active`
+- Protected endpoint to update only the active state of a service.
+
+### `DELETE /api/services/:id`
+- Protected endpoint to delete a service.
+
+---
+
+## Bookings
+
+### `POST /api/bookings`
+- Protected endpoint to create a booking.
+
+### `GET /api/bookings/:id`
+- Returns booking details with related user and service information.
+
+### `GET /api/bookings/user/:userId`
+- Returns bookings for a user.
+- Supports optional status filtering.
+
+### `PUT /api/bookings/:id`
+- Protected endpoint to update booking details.
+
+### `PATCH /api/bookings/:id/status`
+- Protected endpoint used for booking cancellation / status update behavior.
+
+---
+
+## Approval
+
+### Staff Approval Routes
+
+#### `GET /api/approval/staff/:staffId/pending`
+- Staff-only route returning pending bookings for the staff member’s service.
+
+#### `GET /api/approval/staff/:staffId/all`
+- Staff-only route returning all bookings for the staff member’s service.
+
+#### `PUT /api/approval/bookings/:id/approve`
+- Staff-only route to approve a booking.
+
+#### `PUT /api/approval/bookings/:id/reject`
+- Staff-only route to reject a booking.
+
+### Admin Approval Routes
+
+#### `GET /api/approval/admin/:userId/pending`
+- Admin-only route returning all pending bookings across the platform.
+
+#### `GET /api/approval/admin/:userId/all`
+- Admin-only route returning all bookings across the platform.
+
+#### `PUT /api/approval/admin/:userId/bookings/:id/approve`
+- Admin-only route to approve any booking.
+
+#### `PUT /api/approval/admin/:userId/bookings/:id/reject`
+- Admin-only route to reject any booking.
+
+---
+
+## Notifications
+
+### `GET /api/notifications/:userId`
+- Protected endpoint returning notifications for a user.
+
+### `POST /api/notifications`
+- Protected endpoint creating a notification.
+
+### `PUT /api/notifications/:id/read`
+- Protected endpoint marking a notification as read.
+
+---
+
+## Reviews
+
+### `GET /api/reviews/service/:serviceId`
+- Returns reviews for a service.
+
+### `GET /api/reviews/user/:userId`
+- Returns reviews created by a specific user.
+
+### `GET /api/reviews/:id`
+- Returns a single review.
+
+### `POST /api/reviews`
+- Protected endpoint creating a review.
+
+### `DELETE /api/reviews/:id`
+- Protected endpoint deleting a review.
+
+---
+
+## 📌 Sprint 4 Deliverables Summary
+
+Sprint 4 successfully delivered:
+- expanded frontend unit testing for profile, dashboard, bookings, authentication, and service pages
+- Cypress validation for a core user navigation flow
+- stronger backend review and service handler test coverage
+- improved testing and setup documentation through README and TESTING_GUIDE updates
+- updated backend API documentation aligned with the current tested application behavior
+
+Sprint 4 improved the reliability, maintainability, and evaluability of the Smart Campus Services Platform by strengthening both automated test coverage and supporting project documentation.
