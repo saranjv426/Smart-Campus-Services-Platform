@@ -78,6 +78,10 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notification"})
 		return
 	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Notification not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, notification)
 }

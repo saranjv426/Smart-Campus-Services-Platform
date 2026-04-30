@@ -1,4 +1,4 @@
-# Smart Campus Services Platform
+# Smart Campus Services Platform 🎓
 
 Smart Campus Services Platform is a comprehensive full-stack, role-based web application for discovering, booking, reviewing, and managing campus services. Students can browse services, create bookings, review services, and manage their profiles. Staff and administrators can review booking requests, manage services, and monitor platform activity through dedicated dashboards.
 
@@ -90,9 +90,12 @@ The platform centralizes service discovery, booking workflows, notifications, an
 
 ---
 
-## Requirements
+## Team Members:
+Venkata Sai Saran Jonnalagadda - 11114995 
+Srikar Panuganti - 38909216 
+Keerthi Reddy Gudibandi - 13652831 
+Vishnu Sai Padyala - 32712860
 
-Install these tools before running the application:
 
 | Tool | Required version | Used for |
 | --- | --- | --- |

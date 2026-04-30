@@ -23,7 +23,7 @@ type RegisterRequest struct {
 	FirstName string `json:"firstName" binding:"required"`
 	LastName  string `json:"lastName" binding:"required"`
 	Phone     string `json:"phone" binding:"required"`
-	Role      string `json:"role" binding:"required,role"`
+	Role      string `json:"role" binding:"required,oneof=student staff admin"`
 }
 
 type LoginRequest struct {

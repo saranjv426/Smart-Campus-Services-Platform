@@ -8,10 +8,18 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"smart-campus-services/models"
+	"smart-campus-services/testutil"
 )
 
+func setupApprovalRouter(handler *ApprovalHandler) *gin.Engine {
+	router := gin.New()
+	router.GET("/approval/staff/:staffId/pending", handler.GetPendingBookings)
+	router.PUT("/approval/bookings/:id/approve", handler.ApproveBooking)
+	return router
+}
+
 func TestGetPendingBookingsReturnsStaffServiceBookings(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	service := createServiceFixture(t, db)
 	otherService := createServiceFixture(t, db, func(s *models.Service) {
 		s.Name = "Health Center"
@@ -25,15 +33,17 @@ func TestGetPendingBookingsReturnsStaffServiceBookings(t *testing.T) {
 	createBookingFixture(t, db, user.ID, service.ID, func(b *models.Booking) {
 		b.Status = "pending"
 	})
+	createBookingFixture(t, db, user.ID, service.ID, func(b *models.Booking) {
+		b.Status = "approved"
+	})
 	createBookingFixture(t, db, user.ID, otherService.ID, func(b *models.Booking) {
 		b.Status = "pending"
 	})
 
 	handler := NewApprovalHandler(db)
-	router := gin.New()
-	router.GET("/approval/staff/:staffId/pending", handler.GetPendingBookings)
+	router := setupApprovalRouter(handler)
 
-	rec := performRequest(t, router, http.MethodGet, "/approval/staff/"+staff.ID+"/pending", nil)
+	rec := testutil.PerformRequest(router, http.MethodGet, "/approval/staff/"+staff.ID+"/pending", nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
@@ -77,7 +87,7 @@ func TestGetAllBookingsForServiceReturnsAllStatuses(t *testing.T) {
 }
 
 func TestApproveBookingUpdatesStatusAndCreatesNotification(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutil.NewTestDB(t)
 	service := createServiceFixture(t, db)
 	staff := createUserFixture(t, db, func(u *models.User) {
 		u.Role = "staff"
@@ -87,14 +97,13 @@ func TestApproveBookingUpdatesStatusAndCreatesNotification(t *testing.T) {
 	booking := createBookingFixture(t, db, user.ID, service.ID)
 
 	handler := NewApprovalHandler(db)
-	router := gin.New()
-	router.PUT("/approval/bookings/:id/approve", handler.ApproveBooking)
+	router := setupApprovalRouter(handler)
 
-	rec := performRequest(t, router, http.MethodPut, "/approval/bookings/"+booking.ID+"/approve", ApprovalRequest{
+	rec := testutil.PerformRequest(router, http.MethodPut, "/approval/bookings/"+booking.ID+"/approve", testutil.MustMarshal(ApprovalRequest{
 		Status:        "approved",
 		ApprovalNotes: "See you soon",
 		StaffID:       staff.ID,
-	})
+	}))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d with body %s", rec.Code, rec.Body.String())
